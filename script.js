@@ -9,6 +9,43 @@ const PAGE_ANCHOR_BREAKPOINT = 960;
 const PAGE_ANCHOR_SIDE_OFFSET = 40;
 const PAGE_ANCHOR_INITIAL_TOP = 335;
 const PAGE_ANCHOR_STICKY_TOP = 40;
+const NON_BREAKING_SPACE = "\u00A0";
+const NON_BREAKING_WORDS = [
+  "а",
+  "без",
+  "б",
+  "бы",
+  "в",
+  "во",
+  "да",
+  "для",
+  "до",
+  "же",
+  "за",
+  "и",
+  "из",
+  "изо",
+  "или",
+  "к",
+  "ко",
+  "ли",
+  "на",
+  "над",
+  "не",
+  "ни",
+  "но",
+  "о",
+  "об",
+  "обо",
+  "от",
+  "по",
+  "под",
+  "при",
+  "про",
+  "с",
+  "со",
+  "у",
+];
 
 const cardStates = {
   0: [520, 520, 40, 0, 0, 4],
@@ -21,6 +58,13 @@ const cardStates = {
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const nonBreakingWordPattern = new RegExp(
+  `(^|[\\s([{"«])(${NON_BREAKING_WORDS.map(escapeRegExp).join("|")})\\s+(?=\\S)`,
+  "giu"
+);
 
 const handleInitialHashScroll = () => {
   const { hash } = window.location;
@@ -192,6 +236,59 @@ function setupCopyEmailButton() {
       await animateButtonState(EMAIL_ADDRESS, MAIL_ICON_PATH);
     } finally {
       isAnimating = false;
+    }
+  });
+}
+
+function setupNonBreakingShortWords() {
+  if (!document.body.classList.contains("story-builder")) return;
+
+  const textSelectors = [
+    ".story-content__description",
+    ".story-section__title",
+    ".story-section__description",
+    ".job-stories-list__text",
+    ".job-stories-list__caption",
+    ".image-block__caption",
+  ];
+
+  const walkerFilter = {
+    acceptNode(node) {
+      if (!node.textContent || !node.textContent.trim()) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (!(node.parentElement instanceof HTMLElement)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (
+        node.parentElement.closest(
+          "script, style, noscript, .back-button, .link-button-text"
+        )
+      ) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  };
+
+  document.querySelectorAll(textSelectors.join(", ")).forEach((element) => {
+    const textWalker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      walkerFilter
+    );
+
+    let currentNode = textWalker.nextNode();
+
+    while (currentNode) {
+      currentNode.textContent = currentNode.textContent.replace(
+        nonBreakingWordPattern,
+        (_, prefix, word) => `${prefix}${word}${NON_BREAKING_SPACE}`
+      );
+      currentNode = textWalker.nextNode();
     }
   });
 }
@@ -1251,6 +1348,7 @@ function setupPreviewZoom() {
 
 document.addEventListener("DOMContentLoaded", () => {
   handleInitialHashScroll();
+  setupNonBreakingShortWords();
   setupCopyEmailButton();
   setupWorkListToggles();
   setupCardSwipe();
