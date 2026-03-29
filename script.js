@@ -596,6 +596,7 @@ function setupPreviewZoom() {
   }
 
   const MAX_MODAL_IMAGE_SCALE = 4;
+  const MODAL_IMAGE_PRELOAD_ROOT_MARGIN = "800px 0px";
   const zoomState = {
     scale: 1,
     translateX: 0,
@@ -615,9 +616,16 @@ function setupPreviewZoom() {
   const getActiveModalMedia = () =>
     modal.classList.contains("image-modal--video") ? modalVideo : modalImage;
 
+  const prefersReducedData = () => {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return Boolean(connection?.saveData);
+  };
+
   const isMobileImageZoomEnabled = () =>
     window.innerWidth < MOBILE_PADDING_BREAKPOINT &&
     modal.classList.contains("image-modal--image");
+
+  const imagePreloadCache = new Map();
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -734,10 +742,68 @@ function setupPreviewZoom() {
       ? "video"
       : "image";
 
+  const getTriggerPreviewSrc = (trigger) =>
+    trigger.querySelector("img")?.getAttribute("src") || "";
+
   const getTriggerFullSrc = (trigger) =>
     trigger.getAttribute("data-full-src") ||
     trigger.getAttribute("src") ||
     trigger.querySelector("video, img")?.getAttribute("src");
+
+  const preloadImageAsset = (src, fetchPriority = "low") => {
+    if (!src) {
+      return Promise.resolve("");
+    }
+
+    if (imagePreloadCache.has(src)) {
+      return imagePreloadCache.get(src);
+    }
+
+    const preloadPromise = new Promise((resolve, reject) => {
+      const preloader = new Image();
+      preloader.decoding = "async";
+      preloader.fetchPriority = fetchPriority;
+      preloader.onload = () => resolve(src);
+      preloader.onerror = reject;
+      preloader.src = src;
+    }).catch((error) => {
+      imagePreloadCache.delete(src);
+      console.error(error);
+      return "";
+    });
+
+    imagePreloadCache.set(src, preloadPromise);
+    return preloadPromise;
+  };
+
+  const swapModalImageToFullRes = async (fullSrc) => {
+    if (!fullSrc) return;
+
+    const loadedSrc = await preloadImageAsset(fullSrc, "high");
+    if (!loadedSrc) return;
+
+    if (
+      !modal.classList.contains("is-active") ||
+      !modal.classList.contains("image-modal--image") ||
+      modalImage.dataset.fullSrcTarget !== fullSrc
+    ) {
+      return;
+    }
+
+    if (modalImage.getAttribute("src") !== fullSrc) {
+      modalImage.src = fullSrc;
+    }
+  };
+
+  const primeTriggerFullImage = (trigger, fetchPriority = "low") => {
+    if (getTriggerType(trigger) !== "image") return;
+
+    const fullSrc = getTriggerFullSrc(trigger);
+    const previewSrc = getTriggerPreviewSrc(trigger);
+
+    if (!fullSrc || fullSrc === previewSrc) return;
+    void preloadImageAsset(fullSrc, fetchPriority);
+  };
 
   const openModal = (trigger) => {
     const fullSrc = getTriggerFullSrc(trigger);
@@ -758,8 +824,11 @@ function setupPreviewZoom() {
       modal.classList.add("image-modal--video");
       void modalVideo.play().catch(() => {});
     } else {
-      modalImage.src = fullSrc;
+      const previewSrc = getTriggerPreviewSrc(trigger);
+      modalImage.dataset.fullSrcTarget = fullSrc;
+      modalImage.src = previewSrc || fullSrc;
       modal.classList.add("image-modal--image");
+      void swapModalImageToFullRes(fullSrc);
     }
 
     modal.classList.add("is-active");
@@ -782,6 +851,7 @@ function setupPreviewZoom() {
     document.body.style.removeProperty("padding-right");
 
     modalImage.removeAttribute("src");
+    delete modalImage.dataset.fullSrcTarget;
     modalVideo.pause();
     modalVideo.removeAttribute("src");
     modalVideo.load();
@@ -887,11 +957,16 @@ function setupPreviewZoom() {
   );
 
   zoomTriggers.forEach((trigger) => {
+    const preloadOnIntent = () => primeTriggerFullImage(trigger, "high");
+
+    trigger.addEventListener("pointerenter", preloadOnIntent, { passive: true });
+    trigger.addEventListener("focusin", preloadOnIntent);
+    trigger.addEventListener("touchstart", preloadOnIntent, { passive: true });
     trigger.addEventListener("click", () => openModal(trigger));
   });
 
   modalImage.addEventListener("load", () => {
-    resetModalImageZoom();
+    applyModalImageZoom();
     updateModalClosePosition();
   });
   modalVideo.addEventListener("loadedmetadata", updateModalClosePosition);
@@ -917,6 +992,40 @@ function setupPreviewZoom() {
     (event) => event.preventDefault(),
     { passive: false }
   );
+
+  if (!prefersReducedData()) {
+    const previewTrigger = document.querySelector(".preview-block[data-full-src]");
+    if (previewTrigger) {
+      const schedulePreviewPreload = () =>
+        window.setTimeout(() => primeTriggerFullImage(previewTrigger, "high"), 250);
+
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(schedulePreviewPreload, { timeout: 1000 });
+      } else {
+        schedulePreviewPreload();
+      }
+    }
+
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries, currentObserver) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+
+            primeTriggerFullImage(entry.target, "low");
+            currentObserver.unobserve(entry.target);
+          });
+        },
+        { rootMargin: MODAL_IMAGE_PRELOAD_ROOT_MARGIN }
+      );
+
+      zoomTriggers.forEach((trigger) => {
+        if (getTriggerType(trigger) === "image") {
+          observer.observe(trigger);
+        }
+      });
+    }
+  }
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && modal.classList.contains("is-active")) {
