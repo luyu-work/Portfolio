@@ -241,12 +241,10 @@ function setupCardSwipe() {
       }
     }
 
-    updateCardStyles();
+    syncCardLayout();
   }
 
   function updateCardStyles() {
-    let maxBottom = 0;
-
     cards.forEach((card, index) => {
       let stateShift = index - currentCardIndex;
 
@@ -270,11 +268,30 @@ function setupCardSwipe() {
       card.style.zIndex = zIndex;
       card.style.opacity = "1";
       card.style.pointerEvents = index === currentCardIndex ? "auto" : "none";
-
-      maxBottom = Math.max(maxBottom, top + height);
     });
+  }
+
+  function updateContainerHeight() {
+    let maxBottom = 0;
+
+    for (
+      let stateShift = -totalCards + 1;
+      stateShift <= totalCards - 1;
+      stateShift += 1
+    ) {
+      const state = getCardState(String(stateShift));
+      if (!state) continue;
+
+      const [, height, , top] = state;
+      maxBottom = Math.max(maxBottom, top + height);
+    }
 
     container.style.height = `${Math.ceil(maxBottom)}px`;
+  }
+
+  function syncCardLayout() {
+    updateCardStyles();
+    updateContainerHeight();
   }
 
   function handleStart(event) {
@@ -374,8 +391,8 @@ function setupCardSwipe() {
     }
   });
 
-  updateCardStyles();
-  window.addEventListener("resize", updateCardStyles);
+  syncCardLayout();
+  window.addEventListener("resize", syncCardLayout);
 }
 
 function setupScrollToTop() {
@@ -578,8 +595,108 @@ function setupPreviewZoom() {
     return;
   }
 
+  const MAX_MODAL_IMAGE_SCALE = 4;
+  const zoomState = {
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    pinchStartDistance: 0,
+    pinchStartScale: 1,
+    pinchStartTranslateX: 0,
+    pinchStartTranslateY: 0,
+    pinchStartMidpointX: 0,
+    pinchStartMidpointY: 0,
+    panStartX: 0,
+    panStartY: 0,
+    panStartTranslateX: 0,
+    panStartTranslateY: 0,
+  };
+
   const getActiveModalMedia = () =>
     modal.classList.contains("image-modal--video") ? modalVideo : modalImage;
+
+  const isMobileImageZoomEnabled = () =>
+    window.innerWidth < MOBILE_PADDING_BREAKPOINT &&
+    modal.classList.contains("image-modal--image");
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+  const getTouchDistance = (firstTouch, secondTouch) =>
+    Math.hypot(
+      secondTouch.clientX - firstTouch.clientX,
+      secondTouch.clientY - firstTouch.clientY
+    );
+
+  const getTouchMidpoint = (firstTouch, secondTouch) => ({
+    x: (firstTouch.clientX + secondTouch.clientX) / 2,
+    y: (firstTouch.clientY + secondTouch.clientY) / 2,
+  });
+
+  const clampModalImageTranslation = () => {
+    if (!isMobileImageZoomEnabled()) {
+      zoomState.translateX = 0;
+      zoomState.translateY = 0;
+      return;
+    }
+
+    const modalStyles = window.getComputedStyle(modal);
+    const availableWidth =
+      modal.clientWidth -
+      Number.parseFloat(modalStyles.paddingLeft) -
+      Number.parseFloat(modalStyles.paddingRight);
+    const availableHeight =
+      modal.clientHeight -
+      Number.parseFloat(modalStyles.paddingTop) -
+      Number.parseFloat(modalStyles.paddingBottom);
+    const scaledWidth = modalImage.offsetWidth * zoomState.scale;
+    const scaledHeight = modalImage.offsetHeight * zoomState.scale;
+    const maxTranslateX = Math.max((scaledWidth - availableWidth) / 2, 0);
+    const maxTranslateY = Math.max((scaledHeight - availableHeight) / 2, 0);
+
+    zoomState.translateX = clamp(
+      zoomState.translateX,
+      -maxTranslateX,
+      maxTranslateX
+    );
+    zoomState.translateY = clamp(
+      zoomState.translateY,
+      -maxTranslateY,
+      maxTranslateY
+    );
+  };
+
+  const applyModalImageZoom = () => {
+    const isZoomEnabled = isMobileImageZoomEnabled();
+    const isZoomed = isZoomEnabled && zoomState.scale > 1;
+
+    modal.classList.toggle("image-modal--zoom-enabled", isZoomEnabled);
+    modal.classList.toggle("image-modal--zoomed", isZoomed);
+
+    if (!isZoomEnabled) {
+      modalImage.style.transform = "";
+      return;
+    }
+
+    clampModalImageTranslation();
+    modalImage.style.transform = `translate3d(${zoomState.translateX}px, ${zoomState.translateY}px, 0) scale(${zoomState.scale})`;
+  };
+
+  const resetModalImageZoom = () => {
+    zoomState.scale = 1;
+    zoomState.translateX = 0;
+    zoomState.translateY = 0;
+    zoomState.pinchStartDistance = 0;
+    zoomState.pinchStartScale = 1;
+    zoomState.pinchStartTranslateX = 0;
+    zoomState.pinchStartTranslateY = 0;
+    zoomState.pinchStartMidpointX = 0;
+    zoomState.pinchStartMidpointY = 0;
+    zoomState.panStartX = 0;
+    zoomState.panStartY = 0;
+    zoomState.panStartTranslateX = 0;
+    zoomState.panStartTranslateY = 0;
+    applyModalImageZoom();
+  };
 
   const resetModalClosePosition = () => {
     modalClose.classList.remove("is-ready");
@@ -632,6 +749,7 @@ function setupPreviewZoom() {
 
     document.body.style.paddingRight = `${Math.max(scrollbarWidth, 0)}px`;
     modal.classList.remove("image-modal--image", "image-modal--video");
+    resetModalImageZoom();
     resetModalClosePosition();
 
     if (isVideo) {
@@ -657,6 +775,7 @@ function setupPreviewZoom() {
     }
 
     modal.classList.remove("is-active", "image-modal--image", "image-modal--video");
+    modal.classList.remove("image-modal--zoom-enabled", "image-modal--zoomed");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("image-modal-open");
     document.documentElement.classList.remove("image-modal-open");
@@ -666,16 +785,127 @@ function setupPreviewZoom() {
     modalVideo.pause();
     modalVideo.removeAttribute("src");
     modalVideo.load();
+    resetModalImageZoom();
     resetModalClosePosition();
   };
+
+  modalImage.addEventListener(
+    "touchstart",
+    (event) => {
+      if (!isMobileImageZoomEnabled()) return;
+
+      if (event.touches.length === 2) {
+        const [firstTouch, secondTouch] = event.touches;
+        const midpoint = getTouchMidpoint(firstTouch, secondTouch);
+
+        zoomState.pinchStartDistance = getTouchDistance(firstTouch, secondTouch);
+        zoomState.pinchStartScale = zoomState.scale;
+        zoomState.pinchStartTranslateX = zoomState.translateX;
+        zoomState.pinchStartTranslateY = zoomState.translateY;
+        zoomState.pinchStartMidpointX = midpoint.x;
+        zoomState.pinchStartMidpointY = midpoint.y;
+        event.preventDefault();
+        return;
+      }
+
+      if (event.touches.length === 1 && zoomState.scale > 1) {
+        const [touch] = event.touches;
+
+        zoomState.panStartX = touch.clientX;
+        zoomState.panStartY = touch.clientY;
+        zoomState.panStartTranslateX = zoomState.translateX;
+        zoomState.panStartTranslateY = zoomState.translateY;
+        event.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  modalImage.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!isMobileImageZoomEnabled()) return;
+
+      if (event.touches.length === 2) {
+        const [firstTouch, secondTouch] = event.touches;
+        const midpoint = getTouchMidpoint(firstTouch, secondTouch);
+        const nextDistance = getTouchDistance(firstTouch, secondTouch);
+        const distanceRatio = zoomState.pinchStartDistance
+          ? nextDistance / zoomState.pinchStartDistance
+          : 1;
+
+        zoomState.scale = clamp(
+          zoomState.pinchStartScale * distanceRatio,
+          1,
+          MAX_MODAL_IMAGE_SCALE
+        );
+        zoomState.translateX =
+          zoomState.pinchStartTranslateX +
+          (midpoint.x - zoomState.pinchStartMidpointX);
+        zoomState.translateY =
+          zoomState.pinchStartTranslateY +
+          (midpoint.y - zoomState.pinchStartMidpointY);
+        applyModalImageZoom();
+        event.preventDefault();
+        return;
+      }
+
+      if (event.touches.length === 1 && zoomState.scale > 1) {
+        const [touch] = event.touches;
+
+        zoomState.translateX =
+          zoomState.panStartTranslateX + (touch.clientX - zoomState.panStartX);
+        zoomState.translateY =
+          zoomState.panStartTranslateY + (touch.clientY - zoomState.panStartY);
+        applyModalImageZoom();
+        event.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  modalImage.addEventListener(
+    "touchend",
+    (event) => {
+      if (!modal.classList.contains("image-modal--image")) return;
+
+      if (event.touches.length === 1 && zoomState.scale > 1) {
+        const [touch] = event.touches;
+
+        zoomState.panStartX = touch.clientX;
+        zoomState.panStartY = touch.clientY;
+        zoomState.panStartTranslateX = zoomState.translateX;
+        zoomState.panStartTranslateY = zoomState.translateY;
+        return;
+      }
+
+      if (event.touches.length === 0 && zoomState.scale <= 1) {
+        resetModalImageZoom();
+      }
+    },
+    { passive: true }
+  );
 
   zoomTriggers.forEach((trigger) => {
     trigger.addEventListener("click", () => openModal(trigger));
   });
 
-  modalImage.addEventListener("load", updateModalClosePosition);
+  modalImage.addEventListener("load", () => {
+    resetModalImageZoom();
+    updateModalClosePosition();
+  });
   modalVideo.addEventListener("loadedmetadata", updateModalClosePosition);
-  window.addEventListener("resize", updateModalClosePosition);
+  window.addEventListener("resize", () => {
+    if (modal.classList.contains("image-modal--image")) {
+      if (isMobileImageZoomEnabled()) {
+        applyModalImageZoom();
+      } else {
+        resetModalImageZoom();
+      }
+    }
+
+    updateModalClosePosition();
+  });
 
   modalOverlay.addEventListener("click", closeModal);
   modalClose.addEventListener("click", closeModal);
