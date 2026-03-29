@@ -1221,6 +1221,22 @@ body.no-transition .card-item {
     display: none !important;
   }
 
+  .image-modal {
+    padding: 56px 16px 16px;
+  }
+
+  .image-modal__close {
+    top: 16px;
+    right: 16px;
+    left: auto;
+  }
+
+  .image-modal__image,
+  .image-modal__video {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 72px);
+  }
+
   .page:not(.story-builder) .header,
   .page:not(.story-builder) .main-content,
   .page:not(.story-builder) .work-list,
@@ -1248,16 +1264,6 @@ body.no-transition .card-item {
   .story-builder .job-stories-list {
     padding-left: 16px;
     padding-right: 16px;
-  }
-
-  .story-builder .image-modal {
-    padding: 16px;
-  }
-
-  .story-builder .image-modal__image,
-  .story-builder .image-modal__video {
-    max-width: calc(100vw - 112px);
-    max-height: calc(100vh - 32px);
   }
 
   .story-builder .scroll-to-top.fixed {

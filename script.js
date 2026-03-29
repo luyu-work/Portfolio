@@ -913,15 +913,26 @@ function setupPreviewZoom() {
     modalClose.classList.remove("is-ready");
     modalClose.style.removeProperty("top");
     modalClose.style.removeProperty("left");
+    modalClose.style.removeProperty("right");
   };
 
   const updateModalClosePosition = () => {
+    if (!modal.classList.contains("is-active")) {
+      resetModalClosePosition();
+      return;
+    }
+
+    if (window.innerWidth < MOBILE_PADDING_BREAKPOINT) {
+      modalClose.style.removeProperty("top");
+      modalClose.style.removeProperty("left");
+      modalClose.style.removeProperty("right");
+      modalClose.classList.add("is-ready");
+      return;
+    }
+
     const activeMedia = getActiveModalMedia();
 
-    if (
-      !modal.classList.contains("is-active") ||
-      !activeMedia.getAttribute("src")
-    ) {
+    if (!activeMedia.getAttribute("src")) {
       resetModalClosePosition();
       return;
     }
@@ -935,6 +946,7 @@ function setupPreviewZoom() {
     const desiredLeft = rect.right + 8;
     const maxLeft = window.innerWidth - 16 - modalClose.offsetWidth;
 
+    modalClose.style.removeProperty("right");
     modalClose.style.top = `${rect.top}px`;
     modalClose.style.left = `${Math.min(desiredLeft, maxLeft)}px`;
     modalClose.classList.add("is-ready");
