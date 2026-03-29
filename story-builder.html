@@ -1,0 +1,408 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Конструктор сторисов</title>
+    <link rel="icon" href="src/icons/favicon16.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.min.css" />
+  </head>
+  <body class="page story-builder">
+    <main class="main anchor-top" id="story-builder-top">
+      <header class="header anim-load">
+        <a href="./index.html?card=0#cards" class="back-button">
+          <div class="back-button-icon">
+            <img src="./src/icons/back.svg" alt="" width="12" height="12" />
+          </div>
+          <span class="back-button-text">На главную</span>
+        </a>
+      </header>
+      <div class="story-content anim-load anim-delay-1">
+        <h1 class="story-content__title">Конструктор сторисов</h1>
+        <p class="story-content__description">
+          Или как менеджеры начали создавать сторисы за 20 минут с минимальными ошибками
+        </p>
+      </div>
+      <div
+        class="preview-block anim-load anim-delay-2"
+        data-full-src="./src/img/sb-preview@4x.png"
+      >
+        <img
+          class="preview-block__image"
+          src="./src/img/sb-preview.png"
+          alt=""
+          width="780"
+          height="599"
+          decoding="async"
+          fetchpriority="high"
+        >
+      </div>
+      <section class="story-section anchor-section anim-load anim-delay-3" id="sb-context">
+        <h2 class="story-section__title">Контекст</h2>
+        <p class="story-section__description">
+          Раньше сторисы собирали разработчики, что замедляло выпуск контента, поэтому был создан конструктор сторисов, позволяющий менеджерам самостоятельно собирать и публиковать их из готовых пресетов
+        </p>
+      </section>
+      <section class="story-section anchor-section anim-load anim-delay-4" id="sb-problem">
+        <h2 class="story-section__title">Проблема</h2>
+        <p class="story-section__description">
+          После тестирования выяснилось, что при создании вложенных сторисов менеджеры вручную проверяют линковку, прокликивая каждую кнопку, что увеличивает время работы и количество ошибок
+        </p>
+      </section>
+      <section class="story-section anchor-section anim-load anim-delay-5" id="sb-role">
+        <h2 class="story-section__title">Роль</h2>
+        <p class="story-section__description">
+          Проведение юзабилити-тестирования и конкурентного анализа, описание job story и сценариев, приоритизация гипотез по ICE, подготовка screen-flow. Все решения проходили регулярные дизайн-ревью со старшим дизайнером
+        </p>
+      </section>
+      <section class="story-section anchor-section anim-load anim-delay-6" id="sb-approach">
+        <h2 class="story-section__title">Подход</h2>
+        <p class="story-section__description">
+          <span class="white-selection">Ключевыми метриками являются время</span>
+          на выпуск сториса и количество ошибок.
+          <span class="white-selection">Time to publish (TTP)</span>
+          и 
+          <span class="white-selection">Error rate (ER)</span>
+        </p>
+        <p class="story-section__description">
+          Выделили
+          <span class="white-selection">два сегмента</span>
+           пользователей:
+           <span class="white-selection">новички</span>
+          и
+           <span class="white-selection">менеджеры.</span>
+          Новички работают с небольшими сторисами и редко сталкиваются со сложными переходами. Менеджеры собирают большие сценарии, поэтому ручная проверка переходов замедляет работу и увеличивает количество ошибок
+        </p>
+        <p class="story-section__description">
+          Провел конкурентный анализ и определил, какие уже реализованные фичи можно внедрить
+        </p>
+      </section>
+      <div
+        class="image-block anim-load anim-delay-7"
+        data-full-src="./src/img/sb-competitors@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-competitors.png"
+            alt=""
+            width="720"
+            height="212"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Конкуренты</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          На основе инсайтов из тестирования, анализа конкурентов были сформулированы job stories
+        </p>
+      </section>
+      <div class="job-stories-list">
+        <div class="job-stories-list__item">
+          <div class="job-stories-list__text">Когда я собираю сторис с несколькими вложениями, я хочу видеть структуру связей в одном месте, чтобы проверить корректность переходов</div>
+        </div>
+        <div class="job-stories-list__item">
+          <div class="job-stories-list__text">Когда я завершаю сборку сториса перед публикацией, я хочу сразу видеть кнопки без перехода, чтобы сократить время ручной проверки и снизить риск публикации неработающего сценария</div>
+        </div>
+        <div class="job-stories-list__caption">Job stories</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          И наконец, на основе всего были сформулированы гипотезы улучшений, которые затем c командой приоритизировали по ICE
+        </p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-prioritization@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-prioritization.png"
+            alt=""
+            width="984"
+            height="719"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Приоритизация гипотез</div>
+      </div>
+      <section class="story-section anchor-section" id="sb-solution">
+        <h2 class="story-section__title">Решение</h2>
+        <p class="story-section__description">В изначальной версии пользователю необходимо было сначала нажать на кнопку, чтобы понять, куда она ведет</p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-first-ver@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-first-ver.png"
+            alt=""
+            width="780"
+            height="510"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Изначальная версия</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          В новой версии добавили глобальный вид, который показывает все линковки в одном месте, т.е. без ручного прокликивания
+        </p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-new-ver@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-new-ver.png"
+            alt=""
+            width="780"
+            height="510"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Новая версия</div>
+      </div>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-global@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-global.png"
+            alt=""
+            width="780"
+            height="510"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Глобальный вид</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          Кроме того, он интерактивный и позволяет удобно перемещать элементы
+        </p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-interactive@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-interactive.png"
+            alt=""
+            width="780"
+            height="510"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Интерактивность холста</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          Также добавили визуальные состояния кнопок, позволяющие сразу определить, ведёт ли кнопка в скрытый сторис, на внешнюю ссылку или переход не назначен
+        </p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-status@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-status.png"
+            alt=""
+            width="780"
+            height="510"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Явное отображение назначенных кнопок</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          После внедрения провели повторное юзабилити-тестирование, чтобы проверить влияние на TTP и ER
+        </p>
+      </section>
+      <div class="image-block video">
+        <div class="image-block__container">
+          <video
+            class="image-block__video"
+            src="./src/img/sb-video.mp4"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+          ></video>
+        </div>
+        <div class="image-block__caption">Повторное проведение юзабилити-тестирования</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          До изменений менеджеры тратили в среднем 25 минут на сложный сторис с вложенными переходами, после внедрения глобального вида время сократилось до 20 минут и 16 секунд
+        </p>
+        <p class="story-section__description">
+          Доля ошибочных линковок и кнопок без перехода снизилась с 15% до 2%
+        </p>
+        <p class="story-section__description">
+          Результаты основаны на 7 итерациях сценариев с 2 менеджерами
+        </p>
+      </section>
+      <div
+        class="image-block"
+        data-full-src="./src/img/sb-chart@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/sb-chart.png"
+            alt=""
+            width="780"
+            height="558"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Изменение времени создания сториса и количества ошибок по итерациям</div>
+      </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          В первых итерациях время выросло из-за адаптации к новому интерфейсу. После адаптации они начали чаще использовать его для проверки сценария, что снизило когнитивную нагрузку
+        </p>
+        <p class="story-section__description">
+          Лучший результат получился в 17 минут и 24 секунды
+        </p>
+        <p class="story-section__description">
+          На 4-ой итерации остались ошибки связанные с внешними ссылками
+        </p>
+      </section>
+      <section class="story-section anchor-section" id="sb-result">
+        <h2 class="story-section__title">Итог</h2>
+        <p class="story-section__description">Упростил проверку переходов между сторисами и устранил главное узкое горлышко конструктора, что положительно сказалось на TTP и ER</p>
+      </section>
+      <div class="stat-block">
+        <div class="stat-card stat-card--1">
+          <div class="stat-card__value">25 мин → 20 мин</div>
+          <div class="stat-card__caption">TTP</div>
+        </div>
+        <div class="stat-card stat-card--2 stat-card--col-span">
+          <div class="stat-card__value">“Менеджеры получили возможность собирать, проверять и публиковать сторисы внутри одного инструмента”</div>
+        </div>
+        <div class="stat-card stat-card--3">
+          <div class="stat-card__value">15% → 2%</div>
+          <div class="stat-card__caption">ER</div>
+        </div>
+      </div>
+      <section class="story-section anchor-section" id="sb-reflection">
+        <h2 class="story-section__title">Рефлексия</h2>
+        <p class="story-section__description">Следующим логичным шагом я вижу добавление превью ссылок. Это могло бы ещё сильнее сократить остаточные ошибки и приблизить ER к 0-1%</p>
+      </section>
+
+      <div class="action-block">
+        <a href="./index.html?card=0#cards" class="back-button">
+          <div class="back-button-icon">
+            <img src="./src/icons/back.svg" alt="" width="12" height="12" />
+          </div>
+          <span class="back-button-text">На главную</span>
+        </a>
+        <button class="back-button scroll-to-top" type="button">
+          <div class="back-button-icon">
+            <img src="./src/icons/up.svg" alt="" width="12" height="12" />
+          </div>
+          <span class="back-button-text">Наверх</span>
+        </button>
+      </div>
+      <div class="footer">
+        <div class="footer__year">
+          <div class="footer__year-sign">©</div>
+          <div class="footer__year-value">2026</div>
+        </div>
+        <div class="footer__note">Сделано мной для всех, IE</div>
+      </div>
+    </main>
+    <nav
+      class="page-anchor anim-load anim-delay-2"
+      aria-label="Навигация по разделам"
+      data-anchor-nav
+      data-anchor-initial-top="360"
+    >
+      <div class="page-anchor__line" aria-hidden="true"></div>
+      <div class="page-anchor__active-line" aria-hidden="true"></div>
+      <ul class="page-anchor__list">
+        <li class="page-anchor__list-item">
+          <a
+            href="#story-builder-top"
+            class="page-anchor__item anchor-item-active"
+            data-anchor-link
+            data-target-id="story-builder-top"
+          >Превью</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-context"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-context"
+          >Контекст</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-problem"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-problem"
+          >Проблема</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-role"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-role"
+          >Роль</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-approach"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-approach"
+          >Подход</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-solution"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-solution"
+          >Решение</a>
+        </li>
+        <li class="page-anchor__list-item">
+          <a
+            href="#sb-result"
+            class="page-anchor__item anchor-item"
+            data-anchor-link
+            data-target-id="sb-result"
+          >Итог</a>
+        </li>
+      </ul>
+    </nav>
+    <script src="script.min.js" defer></script>
+  </body>
+</html>
