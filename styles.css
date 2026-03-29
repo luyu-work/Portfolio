@@ -803,8 +803,14 @@ body.no-anim .anim-load {
   align-items: center;
 }
 
+.back-button-icon img {
+  display: block;
+  transition: filter 0.2s ease;
+}
+
 .back-button-text {
   padding-bottom: 1px;
+  transition: color 0.2s ease;
 }
 
 .story-content {
@@ -1160,6 +1166,26 @@ body.no-transition .card-item {
   -webkit-backdrop-filter: blur(16px);
   mix-blend-mode: difference;
   transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.action-block .scroll-to-top.scroll-to-top--fallback {
+  background: rgba(255, 255, 255, 0.05);
+  outline: 1px solid rgba(255, 255, 255, 0.05);
+  outline-offset: -1px;
+  mix-blend-mode: normal;
+}
+
+.action-block .scroll-to-top.scroll-to-top--dark-foreground .back-button-text {
+  color: #141414;
+}
+
+.action-block .scroll-to-top.scroll-to-top--dark-foreground .back-button-icon img {
+  filter: brightness(0);
+}
+
+.action-block .scroll-to-top.scroll-to-top--dark-foreground {
+  background: rgba(20, 20, 20, 0.10);
+  outline-color: rgba(20, 20, 20, 0.10);
 }
 
 .action-block .scroll-to-top.visible {

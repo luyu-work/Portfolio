@@ -123,15 +123,46 @@ function setupCopyEmailButton() {
   const iconEl = copyBtn.querySelector(".link-button-icon img");
   if (!textEl || !iconEl) return;
 
+  const iconPreloadCache = new Map();
   let isAnimating = false;
+
+  const preloadIcon = (src) => {
+    if (!src) {
+      return Promise.resolve("");
+    }
+
+    if (iconPreloadCache.has(src)) {
+      return iconPreloadCache.get(src);
+    }
+
+    const preloadPromise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => resolve(src);
+      image.onerror = reject;
+      image.src = src;
+    }).catch((error) => {
+      iconPreloadCache.delete(src);
+      console.error(error);
+      return "";
+    });
+
+    iconPreloadCache.set(src, preloadPromise);
+    return preloadPromise;
+  };
+
+  void preloadIcon(MAIL_ICON_PATH);
+  void preloadIcon(SUCCESS_ICON_PATH);
 
   const animateButtonState = async (text, iconPath) => {
     textEl.classList.add("slide-out-right");
     iconEl.classList.add("zoom-out");
-    await sleep(300);
+    await Promise.all([sleep(300), preloadIcon(iconPath)]);
 
     textEl.textContent = text;
-    iconEl.src = iconPath;
+    if (iconEl.getAttribute("src") !== iconPath) {
+      iconEl.src = iconPath;
+    }
     textEl.classList.remove("slide-out-right");
     iconEl.classList.remove("zoom-out");
     textEl.classList.add("slide-in-left");
@@ -402,6 +433,173 @@ function setupScrollToTop() {
 
   if (!scrollBtn || !actionBlock || !mainContainer) return;
 
+  const contrastCanvas = document.createElement("canvas");
+  const contrastContext = contrastCanvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (contrastContext) {
+    contrastCanvas.width = 1;
+    contrastCanvas.height = 1;
+  }
+
+  const isIOSWebKit = () => {
+    const userAgent = navigator.userAgent || "";
+    const isIOSDevice =
+      /iPad|iPhone|iPod/.test(userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isWebKitBrowser =
+      /WebKit/i.test(userAgent) &&
+      !/CriOS|Chrome|EdgiOS|Firefox|FxiOS|OPiOS/i.test(userAgent);
+
+    return isIOSDevice && isWebKitBrowser;
+  };
+
+  const updateScrollButtonMode = () => {
+    const supportsBlendMode =
+      typeof CSS !== "undefined" &&
+      CSS.supports?.("mix-blend-mode", "difference");
+    const useFallbackMode =
+      !supportsBlendMode ||
+      isIOSWebKit() ||
+      window.innerWidth < MOBILE_PADDING_BREAKPOINT;
+
+    scrollBtn.classList.toggle("scroll-to-top--fallback", useFallbackMode);
+  };
+
+  const getUnderlyingMediaAtPoint = (clientX, clientY) => {
+    const previousPointerEvents = scrollBtn.style.pointerEvents;
+    scrollBtn.style.pointerEvents = "none";
+
+    const elements = document.elementsFromPoint(clientX, clientY);
+
+    scrollBtn.style.pointerEvents = previousPointerEvents;
+
+    for (const element of elements) {
+      if (!(element instanceof Element)) continue;
+      if (element === actionBlock || actionBlock.contains(element)) continue;
+
+      if (
+        element.matches(".preview-block__image, .image-block__image, .image-block__video")
+      ) {
+        return element;
+      }
+    }
+
+    return null;
+  };
+
+  const getMediaLuminanceAtPoint = (media, clientX, clientY) => {
+    if (!contrastContext) return null;
+
+    const mediaRect = media.getBoundingClientRect();
+    if (!mediaRect.width || !mediaRect.height) return null;
+
+    const offsetX = clientX - mediaRect.left;
+    const offsetY = clientY - mediaRect.top;
+
+    if (
+      offsetX < 0 ||
+      offsetY < 0 ||
+      offsetX > mediaRect.width ||
+      offsetY > mediaRect.height
+    ) {
+      return null;
+    }
+
+    let sourceWidth = 0;
+    let sourceHeight = 0;
+
+    if (media instanceof HTMLImageElement) {
+      if (!media.complete || !media.naturalWidth || !media.naturalHeight) {
+        return null;
+      }
+
+      sourceWidth = media.naturalWidth;
+      sourceHeight = media.naturalHeight;
+    } else if (media instanceof HTMLVideoElement) {
+      if (!media.videoWidth || !media.videoHeight || media.readyState < 2) {
+        return null;
+      }
+
+      sourceWidth = media.videoWidth;
+      sourceHeight = media.videoHeight;
+    } else {
+      return null;
+    }
+
+    const sourceX = Math.max(
+      0,
+      Math.min(sourceWidth - 1, (offsetX / mediaRect.width) * sourceWidth)
+    );
+    const sourceY = Math.max(
+      0,
+      Math.min(sourceHeight - 1, (offsetY / mediaRect.height) * sourceHeight)
+    );
+
+    try {
+      contrastContext.clearRect(0, 0, 1, 1);
+      contrastContext.drawImage(media, sourceX, sourceY, 1, 1, 0, 0, 1, 1);
+      const [red, green, blue] = contrastContext.getImageData(0, 0, 1, 1).data;
+
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  const updateScrollButtonContrast = () => {
+    const isFallbackMode = scrollBtn.classList.contains("scroll-to-top--fallback");
+    const isVisible =
+      scrollBtn.classList.contains("visible") && scrollBtn.classList.contains("fixed");
+
+    if (!isFallbackMode || !isVisible) {
+      scrollBtn.classList.remove("scroll-to-top--dark-foreground");
+      return;
+    }
+
+    const buttonRect = scrollBtn.getBoundingClientRect();
+    const samplePoints = [
+      {
+        x: buttonRect.left + buttonRect.width * 0.25,
+        y: buttonRect.top + buttonRect.height * 0.5,
+      },
+      {
+        x: buttonRect.left + buttonRect.width * 0.5,
+        y: buttonRect.top + buttonRect.height * 0.5,
+      },
+      {
+        x: buttonRect.left + buttonRect.width * 0.75,
+        y: buttonRect.top + buttonRect.height * 0.5,
+      },
+    ];
+
+    const luminanceValues = samplePoints
+      .map(({ x, y }) => {
+        const media = getUnderlyingMediaAtPoint(x, y);
+        if (!media) return null;
+
+        return getMediaLuminanceAtPoint(media, x, y);
+      })
+      .filter((value) => typeof value === "number");
+
+    if (!luminanceValues.length) {
+      scrollBtn.classList.remove("scroll-to-top--dark-foreground");
+      return;
+    }
+
+    const brightSamplesCount = luminanceValues.filter((value) => value >= 210).length;
+    const averageLuminance =
+      luminanceValues.reduce((sum, value) => sum + value, 0) /
+      luminanceValues.length;
+
+    scrollBtn.classList.toggle(
+      "scroll-to-top--dark-foreground",
+      brightSamplesCount >= 2 && averageLuminance >= 190
+    );
+  };
+
   scrollBtn.addEventListener("click", () => {
     smoothScrollToY(0);
   });
@@ -422,6 +620,7 @@ function setupScrollToTop() {
     }
 
     scrollBtn.classList.toggle("visible", window.scrollY >= 200);
+    updateScrollButtonContrast();
   };
 
   let isTicking = false;
@@ -436,8 +635,12 @@ function setupScrollToTop() {
   };
 
   window.addEventListener("scroll", requestStickyUpdate, { passive: true });
-  window.addEventListener("resize", requestStickyUpdate);
+  window.addEventListener("resize", () => {
+    updateScrollButtonMode();
+    requestStickyUpdate();
+  });
 
+  updateScrollButtonMode();
   requestStickyUpdate();
 }
 
