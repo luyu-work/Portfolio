@@ -372,7 +372,6 @@ body {
 }
 
 .work-list__company {
-  flex: 1 1 0;
   color: #ffffff;
   font-size: 16px;
   font-weight: 600;
@@ -384,11 +383,11 @@ body {
 }
 
 .work-list__company-link {
-  flex: 0 0 auto;
-  display: inline-flex;
+  flex: none;
+  display: inline-block;
   align-self: flex-start;
-  width: fit-content;
-  max-width: 100%;
+  width: auto;
+  max-width: none;
   transition: color 0.3s cubic-bezier(0.65, 0, 0.35, 1),
     text-decoration-color 0.3s cubic-bezier(0.65, 0, 0.35, 1);
 }
@@ -545,9 +544,9 @@ body {
 .back-button {
   border-radius: 100px;
   background: rgba(255, 255, 255, 0.05);
-  border: none;
-  outline: 1px solid rgba(255, 255, 255, 0.05);
-  outline-offset: -1px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.2s ease;
