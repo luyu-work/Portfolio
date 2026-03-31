@@ -305,6 +305,7 @@ function setupWorkListToggles() {
 
   workList.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
+    if (event.target.closest(".work-list__company-link")) return;
 
     const header = event.target.closest(".work-list__item-header");
     if (!header) return;
@@ -527,6 +528,8 @@ function setupScrollToTop() {
   const scrollBtn = document.querySelector(".scroll-to-top");
   const actionBlock = document.querySelector(".action-block");
   const mainContainer = document.querySelector(".main");
+  const CONTRAST_SAMPLE_CANVAS_SIZE = 12;
+  const CONTRAST_SAMPLE_AREA_SIZE = 24;
 
   if (!scrollBtn || !actionBlock || !mainContainer) return;
 
@@ -536,8 +539,8 @@ function setupScrollToTop() {
   });
 
   if (contrastContext) {
-    contrastCanvas.width = 1;
-    contrastCanvas.height = 1;
+    contrastCanvas.width = CONTRAST_SAMPLE_CANVAS_SIZE;
+    contrastCanvas.height = CONTRAST_SAMPLE_CANVAS_SIZE;
   }
 
   const isIOSWebKit = () => {
@@ -625,21 +628,74 @@ function setupScrollToTop() {
       return null;
     }
 
+    const sourceCenterX = (offsetX / mediaRect.width) * sourceWidth;
+    const sourceCenterY = (offsetY / mediaRect.height) * sourceHeight;
+    const sourceSampleWidth = Math.min(
+      sourceWidth,
+      Math.max(
+        1,
+        Math.round((CONTRAST_SAMPLE_AREA_SIZE / mediaRect.width) * sourceWidth)
+      )
+    );
+    const sourceSampleHeight = Math.min(
+      sourceHeight,
+      Math.max(
+        1,
+        Math.round((CONTRAST_SAMPLE_AREA_SIZE / mediaRect.height) * sourceHeight)
+      )
+    );
     const sourceX = Math.max(
       0,
-      Math.min(sourceWidth - 1, (offsetX / mediaRect.width) * sourceWidth)
+      Math.min(sourceWidth - sourceSampleWidth, sourceCenterX - sourceSampleWidth / 2)
     );
     const sourceY = Math.max(
       0,
-      Math.min(sourceHeight - 1, (offsetY / mediaRect.height) * sourceHeight)
+      Math.min(sourceHeight - sourceSampleHeight, sourceCenterY - sourceSampleHeight / 2)
     );
 
     try {
-      contrastContext.clearRect(0, 0, 1, 1);
-      contrastContext.drawImage(media, sourceX, sourceY, 1, 1, 0, 0, 1, 1);
-      const [red, green, blue] = contrastContext.getImageData(0, 0, 1, 1).data;
+      contrastContext.clearRect(
+        0,
+        0,
+        CONTRAST_SAMPLE_CANVAS_SIZE,
+        CONTRAST_SAMPLE_CANVAS_SIZE
+      );
+      contrastContext.drawImage(
+        media,
+        sourceX,
+        sourceY,
+        sourceSampleWidth,
+        sourceSampleHeight,
+        0,
+        0,
+        CONTRAST_SAMPLE_CANVAS_SIZE,
+        CONTRAST_SAMPLE_CANVAS_SIZE
+      );
 
-      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+      const imageData = contrastContext.getImageData(
+        0,
+        0,
+        CONTRAST_SAMPLE_CANVAS_SIZE,
+        CONTRAST_SAMPLE_CANVAS_SIZE
+      ).data;
+
+      let weightedLuminanceSum = 0;
+      let alphaSum = 0;
+
+      for (let index = 0; index < imageData.length; index += 4) {
+        const red = imageData[index];
+        const green = imageData[index + 1];
+        const blue = imageData[index + 2];
+        const alpha = imageData[index + 3] / 255;
+        const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+
+        weightedLuminanceSum += luminance * alpha;
+        alphaSum += alpha;
+      }
+
+      if (!alphaSum) return null;
+
+      return weightedLuminanceSum / alphaSum;
     } catch (error) {
       console.error(error);
       return null;
@@ -657,20 +713,12 @@ function setupScrollToTop() {
     }
 
     const buttonRect = scrollBtn.getBoundingClientRect();
-    const samplePoints = [
-      {
-        x: buttonRect.left + buttonRect.width * 0.25,
-        y: buttonRect.top + buttonRect.height * 0.5,
-      },
-      {
-        x: buttonRect.left + buttonRect.width * 0.5,
-        y: buttonRect.top + buttonRect.height * 0.5,
-      },
-      {
-        x: buttonRect.left + buttonRect.width * 0.75,
-        y: buttonRect.top + buttonRect.height * 0.5,
-      },
-    ];
+    const samplePoints = [0.2, 0.4, 0.6, 0.8].flatMap((xRatio) =>
+      [0.3, 0.5, 0.7].map((yRatio) => ({
+        x: buttonRect.left + buttonRect.width * xRatio,
+        y: buttonRect.top + buttonRect.height * yRatio,
+      }))
+    );
 
     const luminanceValues = samplePoints
       .map(({ x, y }) => {
@@ -686,14 +734,18 @@ function setupScrollToTop() {
       return;
     }
 
+    const sortedLuminanceValues = [...luminanceValues].sort((a, b) => a - b);
+    const medianLuminance =
+      sortedLuminanceValues[Math.floor(sortedLuminanceValues.length / 2)];
     const brightSamplesCount = luminanceValues.filter((value) => value >= 210).length;
+    const brightSamplesRatio = brightSamplesCount / luminanceValues.length;
     const averageLuminance =
       luminanceValues.reduce((sum, value) => sum + value, 0) /
       luminanceValues.length;
 
     scrollBtn.classList.toggle(
       "scroll-to-top--dark-foreground",
-      brightSamplesCount >= 2 && averageLuminance >= 190
+      brightSamplesRatio >= 0.6 && medianLuminance >= 185 && averageLuminance >= 180
     );
   };
 

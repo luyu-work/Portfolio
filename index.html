@@ -15,210 +15,35 @@
         <div class="logo-wrapper">
           <img src="./src/icons/logo.svg" alt="" width="32" height="25" />
         </div>
+        <button
+          class="back-button back-button--cv"
+          id="save-file-button"
+          type="button"
+          data-download-url="./src/files/cv-kharisov.pdf"
+          data-download-name="cv-kharisov.pdf"
+          aria-label="CV"
+        >
+          <span class="back-button-text cv-text">Скачать CV</span>
+        </button>
       </header>
       <div class="main-content">
         <div class="main-content__text anim-load anim-delay-1">
           <div class="main-content__title">
             <div class="main-content__greeting">👋 Хей</div>
             <div class="main-content__intro">
-              <span class="main-content__intro-bold"
-                >Меня зовут Данил и я продуктовый дизайнер.</span>
-              <span class="main-content__intro-light">Специализируюсь на</span>
-              <span class="main-content__intro-bold">B2B</span>
-              <span class="main-content__intro-light">и</span>
-              <span class="main-content__intro-bold">B2E</span>
+              <span class="main-content__intro-bold">Я Данил – продуктовый дизайнер из Уфы*.</span>
+              <span class="main-content__intro-light">Специализируюсь на B2B и B2E</span>
             </div>
           </div>
           <div class="main-content__description">
-            Разрабатывал системы мониторинга, интеграцию с
-            1С, мобилки и внутренние конструкторы
+            Разрабатывал системы мониторинга, интеграцию 1С в корпоративный сайт, мобилки и внутренние конструкторы
+          </div>
+          <div class="work-list__description">
+            <i>*Но с мая готов начать свою дислокацию в любую точку мира, так
+            что буду рад и гибриду</i>
           </div>
         </div>
-        <div class="main-content__availability anim-load anim-delay-2">
-          <div class="main-content__status">
-            <div class="main-content__lead">
-              <img src="./src/icons/check.svg" alt="" width="16" height="16" />
-            </div>
-            <div class="main-content__container">
-              <div class="main-content__availability-text">
-                Доступен для найма
-              </div>
-            </div>
-          </div>
-
-          <div class="main-content__divider"></div>
-          <div class="main-content__container">
-            <a
-              href="https://t.me/evillazy?text=%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%D1%81%D1%82%D0%B2%D1%83%D1%8E%2C%20%D0%94%D0%B0%D0%BD%D0%B8%D0%BB%21%20%D0%A5%D0%BE%D1%82%D0%B5%D0%BB%D0%B8%20%D0%B1%D1%8B%20%D0%BF%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B6%D0%B8%D1%82%D1%8C%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%83..."
-              class="main-content__link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Связаться
-            </a>
-          </div>
-        </div>
-      </div>
-      <div class="card-container anim-load anim-delay-3" id="cards">
-        <div class="card-item card-item--1" data-href="./story-builder.html"></div>
-        <div class="card-item card-item--2" data-href="./agreement-card.html"></div>
-        <div class="card-item card-item--3"></div>
-        <div class="card-item card-item--4"></div>
-      </div>
-      <section class="work-list anim-load anim-delay-4">
-        <div class="work-list__title">
-          <div class="work-list__title-text">
-            Общий стаж<br />2 года и 1 месяц
-          </div>
-        </div>
-        <div class="work-list__item" collapsed="yes">
-          <div class="work-list__item-header">
-            <div class="work-list__left-side">
-              <div class="work-list__date">05.25 – сейчас</div>
-              <div class="work-list__company">ЦВА</div>
-            </div>
-            <div class="work-list__action">
-              <div class="work-list__position">Продуктовый <span class="work-list__position-suffix">дизайнер</span></div>
-              <button
-                class="work-list__toggle"
-                type="button"
-                aria-label="Развернуть/свернуть"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
-                    stroke="white"
-                    stroke-width="1.33333"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="work-list__item-content">
-            <p class="work-list__description">
-              На текущей работе я проектирую сложные B2B‑интерфейсы – системы
-              виртуализации и мониторинга. Полностью переработал интерфейс
-              мониторинговой системы на базе Zabbix — решение прошло проверку
-              Минцифры и получило лицензию как отечественный продукт.
-              Интегрировал 1С во внутренний портал – теперь документы,
-              контрагенты и проекты связаны в едином пространстве
-            </p>
-          </div>
-        </div>
-        <div class="work-list__item" collapsed="yes">
-          <div class="work-list__item-header">
-            <div class="work-list__left-side">
-              <div class="work-list__date">10.24 – 12.24</div>
-              <div class="work-list__company">Tages</div>
-            </div>
-            <div class="work-list__action">
-              <div class="work-list__position">UI/UX <span class="work-list__position-suffix">дизайнер</span></div>
-              <button
-                class="work-list__toggle"
-                type="button"
-                aria-label="Развернуть/свернуть"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
-                    stroke="white"
-                    stroke-width="1.33333"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="work-list__item-content">
-            <p class="work-list__description">
-              В Tages использовал аналог Figma – Pixso, где активно работал с
-              корпоративной дизайн-системой, созданной старшими UI/UX
-              дизайнерами. Моя задача охватывала как мобильное B2B приложение
-              для закупки товаров, так и web-интерфейс для разработки сторисов
-              для этого приложения. Благодаря этому менеджеры
-              могли самостоятельно создавать и публиковать сторисы через
-              конструктор <br /><br />
-              Реализовал удобные функции для просмотра превью документа,
-              подписания и других действий, чтобы можно было работать с
-              документами прямо на телефоне
-            </p>
-          </div>
-        </div>
-        <div class="work-list__item" collapsed="yes">
-          <div class="work-list__item-header">
-            <div class="work-list__left-side">
-              <div class="work-list__date">09.23 – 07.24</div>
-              <div class="work-list__company">ITC</div>
-            </div>
-            <div class="work-list__action">
-              <div class="work-list__position">UI/UX <span class="work-list__position-suffix">дизайнер</span></div>
-              <button
-                class="work-list__toggle"
-                type="button"
-                aria-label="Развернуть/свернуть"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
-                    stroke="white"
-                    stroke-width="1.33333"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="work-list__item-content">
-            <p class="work-list__description">
-              Это начало моей карьеры: здесь я научился собирать ui‑kit,
-              переводить интерфейсы на компонентный подход и упрощать макеты,
-              чтобы их было проще поддерживать и разрабатывать. Также разобрался
-              в процессах фронтенд‑команды и выстроил с ней плотное
-              взаимодействие через пользовательские сценарии и user-flow<br /><br />
-              Работал с готовой UI‑библиотекой – Element+. Участвовал в B2G
-              проектах: «103» для Новгорода и «112» для Перми. Подготовил
-              интерфейс Proxmox для DevOps‑отдела
-            </p>
-          </div>
-        </div>
-      </section>
-      <section class="link anim-load anim-delay-5">
-        <div class="link-text">
-          <p class="link-text-main">
-            <span class="link-text-main--white">Нахожусь </span>
-            <span class="link-text-main--muted">на данный момент</span>
-            <span class="link-text-main--white"> в Уфе, </span>
-            <span class="link-text-main--muted">поэтому пока </span>
-            <span class="link-text-main--white">ищу удаленку</span>
-          </p>
-          <p class="link-text-sub">
-            Но с мая готов начать свою дислокацию в любую точку мира, так
-            что буду рад и гибриду
-          </p>
-        </div>
-        <div class="link-actions">
+      <div class="link-actions anim-load anim-delay-2">
           <a
             class="link-button"
             href="https://t.me/Evillazy"
@@ -250,8 +75,160 @@
             <span class="link-button-text">lubu.lanfen@gmail.com</span>
           </button>
         </div>
+      </div>
+      <div class="card-container anim-load anim-delay-3" id="cards">
+        <div class="card-item card-item--1" data-href="./story-builder.html"></div>
+        <div class="card-item card-item--2" data-href="./agreement-card.html"></div>
+        <div class="card-item card-item--3"></div>
+        <div class="card-item card-item--4"></div>
+      </div>
+      <section class="work-list anim-load anim-delay-4">
+        <div class="work-list__title">
+          <div class="work-list__title-text">
+            Общий стаж<br />2 года и 1 месяц
+          </div>
+        </div>
+        <div class="work-list__item" collapsed="yes">
+          <div class="work-list__item-header">
+            <div class="work-list__left-side">
+              <div class="work-list__date">05.25 – сейчас</div>
+              <a
+                class="work-list__company work-list__company-link"
+                href="https://digitalva.org/about"
+                target="_blank"
+                rel="noopener noreferrer"
+              >ЦВА</a>
+            </div>
+            <div class="work-list__action">
+              <div class="work-list__position">Продуктовый <span class="work-list__position-suffix">дизайнер</span></div>
+              <button
+                class="work-list__toggle"
+                type="button"
+                aria-label="Развернуть/свернуть"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
+                    stroke="white"
+                    stroke-width="1.33333"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="work-list__item-content">
+            <p class="work-list__description">
+              - проектирую B2B-интерфейсы для систем виртуализации, мониторинга и внутренних сервисов;<br>
+              - переработал интерфейс мониторинговой системы на базе Zabbix. Решение прошло проверку Минцифры и вошло в лицензированный отечественный продукт;<br>
+              - спроектировал концепт единой точки работы с договором и связанными сущностями в портале с интеграцией 1С;<br>
+              - дополнительно к глубинному интервью и job story собирал data model;<br>
+              - проверял решения на прототипах и дорабатывал их итеративно на основе обратной связи пользователей.
+            </p>
+          </div>
+        </div>
+        <div class="work-list__item" collapsed="yes">
+          <div class="work-list__item-header">
+            <div class="work-list__left-side">
+              <div class="work-list__date">10.24 – 12.24</div>
+              <a
+                class="work-list__company work-list__company-link"
+                href="https://tages.ru/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Tages</a>
+            </div>
+            <div class="work-list__action">
+              <div class="work-list__position">UI/UX <span class="work-list__position-suffix">дизайнер</span></div>
+              <button
+                class="work-list__toggle"
+                type="button"
+                aria-label="Развернуть/свернуть"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
+                    stroke="white"
+                    stroke-width="1.33333"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="work-list__item-content">
+            <p class="work-list__description">
+              - проектировал B2B-интерфейсы для мобильного приложения закупок и web-конструктора сторисов;<br>
+              - проводил юзабилити-тестирование и конкурентный анализ, описывал job story, сценарии и приоритизировал гипотезы по ICE;<br>
+              - спроектировал глобальный вид сценария для сторисов с вложенными переходами;<br>
+              - после внедрения среднее время выполнения сложного сценария сократилось с 25 минут до 20:16;<br>
+              - доля ошибочных линковок и кнопок без перехода снизилась с 15% до 2%;<br>
+              - результаты подтверждены серией из 7 итераций тестирования с 2 менеджерами
+            </p>
+          </div>
+        </div>
+        <div class="work-list__item" collapsed="yes">
+          <div class="work-list__item-header">
+            <div class="work-list__left-side">
+              <div class="work-list__date">09.23 – 07.24</div>
+              <a
+                class="work-list__company work-list__company-link"
+                href="https://itcodegroup.ru/about"
+                target="_blank"
+                rel="noopener noreferrer"
+              >ITC</a>
+            </div>
+            <div class="work-list__action">
+              <div class="work-list__position">UI/UX <span class="work-list__position-suffix">дизайнер</span></div>
+              <button
+                class="work-list__toggle"
+                type="button"
+                aria-label="Развернуть/свернуть"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 8H8M8 8H12M8 8V12M8 8V4"
+                    stroke="white"
+                    stroke-width="1.33333"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="work-list__item-content">
+            <p class="work-list__description">
+              - развивал UI-kit и переводил интерфейсы на компонентный подход;<br>
+              - работал с Element+ и готовил интерфейсы под продуктовые и технические ограничения;<br>
+              - участвовал в B2G-проектах «103» и «112», а также подготовил интерфейс Proxmox для DevOps-отдела;<br>
+              - выстроил взаимодействие с фронтенд-командой через user-flow и сценарии
+            </p>
+          </div>
+        </div>
       </section>
-      <div class="footer anim-load anim-delay-6">
+      
+      <div class="footer anim-load anim-delay-5">
         <div class="footer__year">
           <div class="footer__year-sign">©</div>
           <div class="footer__year-value">2026</div>
@@ -259,6 +236,56 @@
         <div class="footer__note">Сделано мной для всех, IE</div>
       </div>
     </main>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const saveFileButton = document.getElementById("save-file-button");
+        if (!(saveFileButton instanceof HTMLButtonElement)) return;
+
+        const { downloadUrl = "", downloadName = "" } = saveFileButton.dataset;
+        if (!downloadUrl) return;
+
+        const fallbackDownload = () => {
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = downloadName || "";
+          link.rel = "noopener";
+          document.body.append(link);
+          link.click();
+          link.remove();
+        };
+
+        saveFileButton.addEventListener("click", async () => {
+          const suggestedName =
+            downloadName || downloadUrl.split("/").filter(Boolean).pop() || "download";
+
+          if (!window.showSaveFilePicker || !window.isSecureContext) {
+            fallbackDownload();
+            return;
+          }
+
+          try {
+            const response = await fetch(downloadUrl);
+            if (!response.ok) {
+              throw new Error("Download source is unavailable");
+            }
+
+            const fileBlob = await response.blob();
+            const fileHandle = await window.showSaveFilePicker({ suggestedName });
+            const writable = await fileHandle.createWritable();
+
+            await writable.write(fileBlob);
+            await writable.close();
+          } catch (error) {
+            if (error instanceof DOMException && error.name === "AbortError") {
+              return;
+            }
+
+            console.error(error);
+            fallbackDownload();
+          }
+        });
+      });
+    </script>
     <script src="script.js"></script>
   </body>
 </html>
