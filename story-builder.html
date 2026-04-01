@@ -41,19 +41,19 @@
       <section class="story-section anchor-section anim-load anim-delay-3" id="sb-context">
         <h2 class="story-section__title">Контекст</h2>
         <p class="story-section__description">
-          Раньше сторисы собирали разработчики, что замедляло выпуск контента, поэтому был создан конструктор сторисов, позволяющий менеджерам самостоятельно собирать и публиковать их из готовых пресетов
+          В мобильном приложении компании сторисы использовались как промо-инструмент. Для работы с этим контентом мы с командой создали конструктор сторисов – систему с готовыми пресетами, которая позволяла менеджерам самостоятельно собирать, редактировать и публиковать сторисы без участия разработчиков
         </p>
       </section>
       <section class="story-section anchor-section anim-load anim-delay-4" id="sb-problem">
         <h2 class="story-section__title">Проблема</h2>
         <p class="story-section__description">
-          Во время юзабилити-тестирования первой версии с менеджерами выяснилось, что при создании вложенных сторисов они проверяют линковку вручную, т.е. прокликивают каждую кнопку. Из-за этого процесс занимал больше времени и росло количество ошибок
+          После запуска первой версии на тестовом стенде стало понятно, что при создании вложенных сторисов менеджеры вручную проверяют линковку, прокликивая каждую кнопку, что увеличивает время работы и количество ошибок
         </p>
       </section>
       <section class="story-section anchor-section anim-load anim-delay-5" id="sb-role">
         <h2 class="story-section__title">Роль</h2>
         <p class="story-section__description">
-          Проведение юзабилити-тестирования и конкурентного анализа, описание job story и сценариев, приоритизация гипотез по ICE, подготовка screen-flow. Все решения проходили регулярные дизайн-ревью со старшим дизайнером
+          Проведение юзабилити-тестирования и конкурентного анализа, описание job story и сценариев, подготовка screen-flow. Все решения проходили регулярные дизайн-ревью со старшим дизайнером
         </p>
       </section>
       <section class="story-section anchor-section anim-load anim-delay-6" id="sb-approach">
@@ -111,26 +111,15 @@
       </div>
       <section class="story-section">
         <p class="story-section__description">
-          И наконец, на основе всего были сформулированы гипотезы улучшений, которые затем c командой приоритизировали по ICE
+          На основе тестирования и анализа пользовательских сценариев мы сформулировали основную продуктовую гипотезу: если дать пользователю единое представление о структуре и проблемных связях, то время ручной проверки перед публикацией сократится, а количество ошибок снизится
+        </p>
+        <p class="story-section__description">
+          Для проверки этой гипотезы мы рассмотрели несколько интерфейсных решений: интерактивный холст, отдельный блок со всеми переходами, карта экранов, статусы кнопок и подсветку проблемных мест
+        </p>
+        <p class="story-section__description">
+          В этом кейсе я сфокусируюсь на двух решениях: интерактивный холст и статусы кнопок
         </p>
       </section>
-      <div
-        class="image-block"
-        data-full-src="./src/img/sb-prioritization@4x.png"
-      >
-        <div class="image-block__container">
-          <img
-            class="image-block__image"
-            src="./src/img/sb-prioritization.png"
-            alt=""
-            width="984"
-            height="719"
-            loading="lazy"
-            decoding="async"
-          >
-        </div>
-        <div class="image-block__caption">Приоритизация гипотез</div>
-      </div>
       <section class="story-section anchor-section" id="sb-solution">
         <h2 class="story-section__title">Решение</h2>
         <p class="story-section__description">В изначальной версии пользователю необходимо было сначала нажать на кнопку, чтобы понять, куда она ведет</p>
@@ -154,7 +143,7 @@
       </div>
       <section class="story-section">
         <p class="story-section__description">
-          В новой версии добавили глобальный вид, который показывает все линковки в одном месте, т.е. без ручного прокликивания
+          В новой версии добавили кнопку “К глобальному виду”, которая ведет к интерактивному холсту
         </p>
       </section>
       <div
@@ -174,6 +163,11 @@
         </div>
         <div class="image-block__caption">Новая версия</div>
       </div>
+      <section class="story-section">
+        <p class="story-section__description">
+          Это позволило показать все экраны и переходы в одном месте
+        </p>
+      </section>
       <div
         class="image-block"
         data-full-src="./src/img/sb-global@4x.png"
@@ -190,28 +184,6 @@
           >
         </div>
         <div class="image-block__caption">Глобальный вид</div>
-      </div>
-      <section class="story-section">
-        <p class="story-section__description">
-          Кроме того, он интерактивный и позволяет удобно перемещать элементы
-        </p>
-      </section>
-      <div
-        class="image-block"
-        data-full-src="./src/img/sb-interactive@4x.png"
-      >
-        <div class="image-block__container">
-          <img
-            class="image-block__image"
-            src="./src/img/sb-interactive.png"
-            alt=""
-            width="780"
-            height="510"
-            loading="lazy"
-            decoding="async"
-          >
-        </div>
-        <div class="image-block__caption">Интерактивность холста</div>
       </div>
       <section class="story-section">
         <p class="story-section__description">

@@ -1,9 +1,9 @@
 const EMAIL_ADDRESS = "lubu.lanfen@gmail.com";
 const MAIL_ICON_PATH = "./src/icons/mail.svg";
 const SUCCESS_ICON_PATH = "./src/icons/success.svg";
-
 const MOBILE_PADDING_BREAKPOINT = 600;
 const ACTIVE_CARD_WIDTH_MAX = 520;
+const AUTO_CARD_DEMO_DELAY = 4000;
 const PADDING_MAX = 40;
 const PAGE_ANCHOR_BREAKPOINT = 960;
 const PAGE_ANCHOR_SIDE_OFFSET = 40;
@@ -338,12 +338,48 @@ function setupCardSwipe() {
       : 0;
 
   const SWIPE_THRESHOLD = 50;
+  const prefersReducedMotion =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
   let startX = 0;
   let isDragging = false;
   let cardDragging = null;
   let activePointerId = null;
+  let autoDemoTimeoutId = null;
+  let isAutoDemoStopped = prefersReducedMotion || totalCards < 2;
 
   const getActiveCard = () => cards[currentCardIndex];
+
+  function clearAutoDemoTimer() {
+    if (autoDemoTimeoutId === null) return;
+
+    window.clearTimeout(autoDemoTimeoutId);
+    autoDemoTimeoutId = null;
+  }
+
+  function stopAutoDemo() {
+    if (isAutoDemoStopped) return;
+
+    isAutoDemoStopped = true;
+    clearAutoDemoTimer();
+  }
+
+  function scheduleAutoDemo() {
+    if (isAutoDemoStopped) return;
+
+    clearAutoDemoTimer();
+    autoDemoTimeoutId = window.setTimeout(() => {
+      if (isAutoDemoStopped) return;
+
+      if (isDragging) {
+        scheduleAutoDemo();
+        return;
+      }
+
+      currentCardIndex = currentCardIndex === 0 ? 1 : 0;
+      syncCardLayout();
+      scheduleAutoDemo();
+    }, AUTO_CARD_DEMO_DELAY);
+  }
 
   function resetDragState() {
     const draggingCard = cardDragging;
@@ -371,6 +407,7 @@ function setupCardSwipe() {
     }
 
     syncCardLayout();
+    scheduleAutoDemo();
   }
 
   function updateCardStyles() {
@@ -512,6 +549,8 @@ function setupCardSwipe() {
   document.addEventListener("pointerup", handleEnd);
   document.addEventListener("pointercancel", handleCancel);
 
+  container.addEventListener("mouseenter", stopAutoDemo, { once: true });
+  container.addEventListener("pointerdown", stopAutoDemo, { once: true });
   window.addEventListener("mouseleave", handleGlobalReset);
   window.addEventListener("blur", handleGlobalReset);
   document.addEventListener("visibilitychange", () => {
@@ -521,6 +560,7 @@ function setupCardSwipe() {
   });
 
   syncCardLayout();
+  scheduleAutoDemo();
   window.addEventListener("resize", syncCardLayout);
 }
 

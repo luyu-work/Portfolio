@@ -39,13 +39,13 @@
       <section class="story-section anchor-section anim-load anim-delay-3" id="ac-context">
         <h2 class="story-section__title">Контекст</h2>
         <p class="story-section__description">
-          Работа с договором в 1С была фрагментирована: документы, доп. соглашения, счета и услуги находились в разных разделах, из-за чего пользователи постоянно переключались между экранами. Бизнес решил интегрировать 1С в корпоративный сайт, чтобы объединить ключевые сценарии в одном интерфейсе
+          На момент старта проекта большая часть работы с контрагентами происходила в 1С. Одновременно с этим многие процессы отдела коммерции и юридического отдела уже были реализованы в корпоративном сайте. Чтобы не разделять связанные сценарии между разными системами, бизнес принял решение интегрировать работу с контрагентами из 1С в корпоративный сайт
         </p>
       </section>
       <section class="story-section anchor-section anim-load anim-delay-4" id="ac-problem">
         <h2 class="story-section__title">Проблема</h2>
         <p class="story-section__description">
-          Договор в нынешней системе не являлся единой точкой работы, например, чтобы получить полный контекст, пользователю приходилось переключаться между разделами и вручную сопоставлять информацию, что замедляло выполнение сценариев работы с договором
+          После внедрения в доменную область стало понятно, что договор в текущей системе не является единой точкой работы. Чтобы собрать полный контекст по договору, пользователям приходилось переключаться между разными разделами и вручную сопоставлять информацию. Это замедляло выполнение ключевых сценариев и усложняло работу с договором
         </p>
       </section>
       <section class="story-section anchor-section anim-load anim-delay-5" id="ac-role">
@@ -257,15 +257,18 @@
         <p class="story-section__description">
           Счета и услуги перевёл в табличный формат. Он лучше подходил для сравнения однотипных сущностей и экономил вертикальное пространство. Для счетов добавил статусы прямо в списке, чтобы пользователь видел текущее состояние без перехода внутрь
         </p>
+        <p class="story-section__description">
+          Чтобы снизить перегруженность карточки и упростить навигацию, я также развел счета, услуги и документы по отдельным табам. Это помогло отделить часто используемый сценарий от второстепенных: документы и услуги нужны пользователю реже, тогда как работа со счетами занимает большую часть времени менеджера
+        </p>
       </section>
       <div
         class="image-block"
-        data-full-src="./src/img/ac-new-ver@4x.png"
+        data-full-src="./src/img/ac-account@4x.png"
       >
         <div class="image-block__container">
           <img
             class="image-block__image"
-            src="./src/img/ac-new-ver.png"
+            src="./src/img/ac-account.png"
             alt=""
             width="720"
             height="824"
@@ -273,7 +276,41 @@
             decoding="async"
           >
         </div>
-        <div class="image-block__caption">Вторая итерация</div>
+        <div class="image-block__caption">Счета во второй итерации</div>
+      </div>
+      <div
+        class="image-block"
+        data-full-src="./src/img/ac-services@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/ac-services.png"
+            alt=""
+            width="720"
+            height="824"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Услуги во второй итерации</div>
+      </div>
+      <div
+        class="image-block"
+        data-full-src="./src/img/ac-document@4x.png"
+      >
+        <div class="image-block__container">
+          <img
+            class="image-block__image"
+            src="./src/img/ac-document.png"
+            alt=""
+            width="720"
+            height="824"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="image-block__caption">Документы во второй итерации</div>
       </div>
       <section class="story-section">
         <p class="story-section__description">
