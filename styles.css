@@ -989,6 +989,7 @@ body.no-anim .anim-load {
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0s linear 0.2s;
   z-index: 999;
+  isolation: isolate;
 }
 
 .image-modal.is-active {
@@ -1008,12 +1009,18 @@ body.no-anim .anim-load {
 
 .image-modal__close {
   position: fixed;
-  z-index: 10;
-  padding: 4px;
+  top: 16px;
+  right: 16px;
+  left: auto;
+  z-index: 100;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
   display: inline-flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   gap: 4px;
+  color: #ffffff;
   background: rgba(255, 255, 255, 0);
   border: 0;
   border-radius: 100px;
@@ -1021,22 +1028,30 @@ body.no-anim .anim-load {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease, visibility 0s linear 0.15s, color 0.2s ease;
 }
 
 .image-modal__close.is-ready {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition: opacity 0.15s ease, visibility 0s linear 0s;
+  transition: opacity 0.15s ease, visibility 0s linear 0s, color 0.2s ease;
+}
+
+.image-modal__close--dark {
+  color: #141414;
 }
 
 .image-modal__close svg {
   display: block;
+  pointer-events: none;
 }
 
 .image-modal__image {
   position: relative;
+  z-index: 1;
   margin: 0;
   padding: 0;
   height: auto;
@@ -1047,14 +1062,12 @@ body.no-anim .anim-load {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  transform-origin: center center;
-  transition: transform 0.2s ease;
-  will-change: transform;
 }
 
 .image-modal__video {
   display: none;
   position: relative;
+  z-index: 1;
   margin: 0;
   padding: 0;
   width: auto;
@@ -1099,19 +1112,6 @@ body.image-modal-open .page-anchor {
 
 body.image-modal-open {
   touch-action: none;
-}
-
-.image-modal--zoom-enabled .image-modal__image {
-  touch-action: none;
-}
-
-.image-modal--zoomed .image-modal__image {
-  transition: none;
-}
-
-.image-modal--zoom-enabled .image-modal__image {
-  max-width: none;
-  max-height: none;
 }
 
 .story-section {
@@ -1250,6 +1250,19 @@ body.no-transition .card-item {
   outline: 1px solid rgba(255, 255, 255, 0.05);
   outline-offset: -1px;
   mix-blend-mode: normal;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s linear 0.3s,
+    background 0.2s ease,
+    outline-color 0.2s ease;
+}
+
+.action-block .scroll-to-top.scroll-to-top--fallback .back-button-text {
+  transition: color 0.2s ease;
+}
+
+.action-block .scroll-to-top.scroll-to-top--fallback .back-button-icon img {
+  transition: filter 0.2s ease;
 }
 
 .action-block .scroll-to-top.scroll-to-top--dark-foreground .back-button-text {
@@ -1265,10 +1278,22 @@ body.no-transition .card-item {
   outline-color: rgba(20, 20, 20, 0.10);
 }
 
+.action-block .scroll-to-top:not(.scroll-to-top--fallback) .back-button-icon img {
+  transition: none;
+}
+
 .action-block .scroll-to-top.visible {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+
+.action-block .scroll-to-top.scroll-to-top--fallback.visible {
+  transition:
+    opacity 0.3s ease,
+    visibility 0s linear 0s,
+    background 0.2s ease,
+    outline-color 0.2s ease;
 }
 
 .action-block {
@@ -1300,12 +1325,6 @@ body.no-transition .card-item {
 
   .image-modal {
     padding: 56px 16px 16px;
-  }
-
-  .image-modal__close {
-    top: 16px;
-    right: 16px;
-    left: auto;
   }
 
   .image-modal__image,

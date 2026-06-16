@@ -362,6 +362,10 @@ function setupScrollToTop() {
       if (
         element.matches(".preview-block__image, .image-block__image, .image-block__video")
       ) {
+        if (element.closest(".image-block.result")) {
+          return null;
+        }
+
         return element;
       }
     }
@@ -768,6 +772,100 @@ function setupResultImageResponsive() {
   );
 }
 
+const MODAL_CLOSE_LUMINANCE_THRESHOLD = 185;
+const MODAL_CLOSE_SAMPLE_AREA_SIZE = 24;
+const MODAL_SWIPE_DISMISS_MIN_DISTANCE = 72;
+
+const sampleImageLuminanceAtPoint = (
+  image,
+  clientX,
+  clientY,
+  context,
+  canvasSize = 12
+) => {
+  if (!context || !(image instanceof HTMLImageElement)) return null;
+  if (!image.complete || !image.naturalWidth || !image.naturalHeight) return null;
+
+  const mediaRect = image.getBoundingClientRect();
+  if (!mediaRect.width || !mediaRect.height) return null;
+
+  const offsetX = clientX - mediaRect.left;
+  const offsetY = clientY - mediaRect.top;
+
+  if (
+    offsetX < 0 ||
+    offsetY < 0 ||
+    offsetX > mediaRect.width ||
+    offsetY > mediaRect.height
+  ) {
+    return null;
+  }
+
+  const sourceWidth = image.naturalWidth;
+  const sourceHeight = image.naturalHeight;
+  const sourceCenterX = (offsetX / mediaRect.width) * sourceWidth;
+  const sourceCenterY = (offsetY / mediaRect.height) * sourceHeight;
+  const sourceSampleWidth = Math.min(
+    sourceWidth,
+    Math.max(
+      1,
+      Math.round((MODAL_CLOSE_SAMPLE_AREA_SIZE / mediaRect.width) * sourceWidth)
+    )
+  );
+  const sourceSampleHeight = Math.min(
+    sourceHeight,
+    Math.max(
+      1,
+      Math.round((MODAL_CLOSE_SAMPLE_AREA_SIZE / mediaRect.height) * sourceHeight)
+    )
+  );
+  const sourceX = Math.max(
+    0,
+    Math.min(sourceWidth - sourceSampleWidth, sourceCenterX - sourceSampleWidth / 2)
+  );
+  const sourceY = Math.max(
+    0,
+    Math.min(sourceHeight - sourceSampleHeight, sourceCenterY - sourceSampleHeight / 2)
+  );
+
+  try {
+    context.clearRect(0, 0, canvasSize, canvasSize);
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceSampleWidth,
+      sourceSampleHeight,
+      0,
+      0,
+      canvasSize,
+      canvasSize
+    );
+
+    const imageData = context.getImageData(0, 0, canvasSize, canvasSize).data;
+    let weightedLuminanceSum = 0;
+    let alphaSum = 0;
+
+    for (let index = 0; index < imageData.length; index += 4) {
+      const red = imageData[index];
+      const green = imageData[index + 1];
+      const blue = imageData[index + 2];
+      const alpha = imageData[index + 3] / 255;
+      const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+
+      weightedLuminanceSum += luminance * alpha;
+      alphaSum += alpha;
+    }
+
+    if (!alphaSum) return null;
+
+    return weightedLuminanceSum / alphaSum;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
 function getOrCreateImageModal() {
   let modal = document.querySelector(".image-modal");
 
@@ -784,7 +882,7 @@ function getOrCreateImageModal() {
     <video class="image-modal__video" controls playsinline preload="metadata"></video>
     <button class="image-modal__close" type="button" aria-label="Закрыть медиа">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
   `;
@@ -799,8 +897,6 @@ const IMAGE_MODAL_STATE_CLASSES = [
   "is-active",
   "image-modal--image",
   "image-modal--video",
-  "image-modal--zoom-enabled",
-  "image-modal--zoomed",
 ];
 
 const clearImageModalMedia = (modalImage, modalVideo) => {
@@ -848,167 +944,100 @@ function setupPreviewZoom() {
   const modalVideo = modal.querySelector(".image-modal__video");
   const modalOverlay = modal.querySelector(".image-modal__overlay");
   const modalClose = modal.querySelector(".image-modal__close");
+  const modalCloseIconPath = modal.querySelector(".image-modal__close path");
 
   if (!modalImage || !modalVideo || !modalOverlay || !modalClose) {
     return;
   }
 
-  const MAX_MODAL_IMAGE_SCALE = 4;
-  const MODAL_IMAGE_PRELOAD_ROOT_MARGIN = "800px 0px";
-  const zoomState = {
-    scale: 1,
-    translateX: 0,
-    translateY: 0,
-    pinchStartDistance: 0,
-    pinchStartScale: 1,
-    pinchStartTranslateX: 0,
-    pinchStartTranslateY: 0,
-    pinchStartMidpointX: 0,
-    pinchStartMidpointY: 0,
-    panStartX: 0,
-    panStartY: 0,
-    panStartTranslateX: 0,
-    panStartTranslateY: 0,
-  };
+  if (modalCloseIconPath) {
+    modalCloseIconPath.setAttribute("stroke", "currentColor");
+  }
 
-  const getActiveModalMedia = () =>
-    modal.classList.contains("image-modal--video") ? modalVideo : modalImage;
+  const MODAL_IMAGE_PRELOAD_ROOT_MARGIN = "800px 0px";
+  const imagePreloadCache = new Map();
+  const closeContrastCanvas = document.createElement("canvas");
+  const closeContrastContext = closeContrastCanvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (closeContrastContext) {
+    closeContrastCanvas.width = 12;
+    closeContrastCanvas.height = 12;
+  }
+
+  const swipeDismissState = {
+    active: false,
+    startX: 0,
+    startY: 0,
+  };
 
   const prefersReducedData = () => {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     return Boolean(connection?.saveData);
   };
 
-  const isMobileImageZoomEnabled = () =>
-    window.innerWidth < MOBILE_PADDING_BREAKPOINT &&
-    modal.classList.contains("image-modal--image");
+  const getModalImageUnderCloseButton = () => {
+    if (!modal.classList.contains("image-modal--image")) return null;
 
-  const imagePreloadCache = new Map();
+    const buttonRect = modalClose.getBoundingClientRect();
+    const sampleX = buttonRect.left + buttonRect.width / 2;
+    const sampleY = buttonRect.top + buttonRect.height / 2;
+    const previousPointerEvents = modalClose.style.pointerEvents;
 
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    modalClose.style.pointerEvents = "none";
+    const elements = document.elementsFromPoint(sampleX, sampleY);
+    modalClose.style.pointerEvents = previousPointerEvents;
 
-  const getTouchDistance = (firstTouch, secondTouch) =>
-    Math.hypot(
-      secondTouch.clientX - firstTouch.clientX,
-      secondTouch.clientY - firstTouch.clientY
-    );
-
-  const getTouchMidpoint = (firstTouch, secondTouch) => ({
-    x: (firstTouch.clientX + secondTouch.clientX) / 2,
-    y: (firstTouch.clientY + secondTouch.clientY) / 2,
-  });
-
-  const clampModalImageTranslation = () => {
-    if (!isMobileImageZoomEnabled()) {
-      zoomState.translateX = 0;
-      zoomState.translateY = 0;
-      return;
+    for (const element of elements) {
+      if (
+        element instanceof HTMLImageElement &&
+        element.classList.contains("image-modal__image")
+      ) {
+        return { image: element, sampleX, sampleY };
+      }
     }
 
-    const modalStyles = window.getComputedStyle(modal);
-    const availableWidth =
-      modal.clientWidth -
-      Number.parseFloat(modalStyles.paddingLeft) -
-      Number.parseFloat(modalStyles.paddingRight);
-    const availableHeight =
-      modal.clientHeight -
-      Number.parseFloat(modalStyles.paddingTop) -
-      Number.parseFloat(modalStyles.paddingBottom);
-    const scaledWidth = modalImage.offsetWidth * zoomState.scale;
-    const scaledHeight = modalImage.offsetHeight * zoomState.scale;
-    const maxTranslateX = Math.max((scaledWidth - availableWidth) / 2, 0);
-    const maxTranslateY = Math.max((scaledHeight - availableHeight) / 2, 0);
-
-    zoomState.translateX = clamp(
-      zoomState.translateX,
-      -maxTranslateX,
-      maxTranslateX
-    );
-    zoomState.translateY = clamp(
-      zoomState.translateY,
-      -maxTranslateY,
-      maxTranslateY
-    );
+    return null;
   };
 
-  const applyModalImageZoom = () => {
-    const isZoomEnabled = isMobileImageZoomEnabled();
-    const isZoomed = isZoomEnabled && zoomState.scale > 1;
-
-    modal.classList.toggle("image-modal--zoom-enabled", isZoomEnabled);
-    modal.classList.toggle("image-modal--zoomed", isZoomed);
-
-    if (!isZoomEnabled) {
-      modalImage.style.transform = "";
-      modalImage.style.width = '';
-      modalImage.style.height = '';
-      modalImage.style.maxWidth = '';
-      modalImage.style.maxHeight = '';
-      return;
-    }
-
-    clampModalImageTranslation();
-    modalImage.style.transform = `translate3d(${zoomState.translateX}px, ${zoomState.translateY}px, 0) scale(${zoomState.scale})`;
+  const resetModalCloseChrome = () => {
+    modalClose.classList.remove("is-ready", "image-modal__close--dark");
   };
 
-  const resetModalImageZoom = () => {
-    zoomState.scale = 1;
-    zoomState.translateX = 0;
-    zoomState.translateY = 0;
-    zoomState.pinchStartDistance = 0;
-    zoomState.pinchStartScale = 1;
-    zoomState.pinchStartTranslateX = 0;
-    zoomState.pinchStartTranslateY = 0;
-    zoomState.pinchStartMidpointX = 0;
-    zoomState.pinchStartMidpointY = 0;
-    zoomState.panStartX = 0;
-    zoomState.panStartY = 0;
-    zoomState.panStartTranslateX = 0;
-    zoomState.panStartTranslateY = 0;
-    applyModalImageZoom();
-  };
-
-  const resetModalClosePosition = () => {
-    modalClose.classList.remove("is-ready");
-    modalClose.style.removeProperty("top");
-    modalClose.style.removeProperty("left");
-    modalClose.style.removeProperty("right");
-  };
-
-  const updateModalClosePosition = () => {
+  const updateModalCloseContrast = () => {
     if (!modal.classList.contains("is-active")) {
-      resetModalClosePosition();
+      modalClose.classList.remove("image-modal__close--dark");
       return;
     }
 
-    if (window.innerWidth < MOBILE_PADDING_BREAKPOINT) {
-      modalClose.style.removeProperty("top");
-      modalClose.style.removeProperty("left");
-      modalClose.style.removeProperty("right");
-      modalClose.classList.add("is-ready");
+    const target = getModalImageUnderCloseButton();
+    if (!target || !closeContrastContext) {
+      modalClose.classList.remove("image-modal__close--dark");
       return;
     }
 
-    const activeMedia = getActiveModalMedia();
+    const luminance = sampleImageLuminanceAtPoint(
+      target.image,
+      target.sampleX,
+      target.sampleY,
+      closeContrastContext
+    );
 
-    if (!activeMedia.getAttribute("src")) {
-      resetModalClosePosition();
+    modalClose.classList.toggle(
+      "image-modal__close--dark",
+      typeof luminance === "number" && luminance >= MODAL_CLOSE_LUMINANCE_THRESHOLD
+    );
+  };
+
+  const updateModalCloseChrome = () => {
+    if (!modal.classList.contains("is-active")) {
+      resetModalCloseChrome();
       return;
     }
 
-    const rect = activeMedia.getBoundingClientRect();
-    if (!rect.width && !rect.height) {
-      resetModalClosePosition();
-      return;
-    }
-
-    const desiredLeft = rect.right + 8;
-    const maxLeft = window.innerWidth - 16 - modalClose.offsetWidth;
-
-    modalClose.style.removeProperty("right");
-    modalClose.style.top = `${rect.top}px`;
-    modalClose.style.left = `${Math.min(desiredLeft, maxLeft)}px`;
     modalClose.classList.add("is-ready");
+    updateModalCloseContrast();
   };
 
   const getTriggerType = (trigger) =>
@@ -1063,18 +1092,26 @@ function setupPreviewZoom() {
       return;
     }
 
-    // Guard: if meanwhile another image was opened (different full target set),
-    // don't overwrite it with a stale upgrade.
     const currentTarget = modalImage.dataset.fullSrcTarget;
     if (currentTarget && currentTarget !== fullSrc) {
       return;
     }
 
+    modalImage.dataset.fullSrcTarget = fullSrc;
+
     if (modalImage.getAttribute("src") !== fullSrc) {
       modalImage.src = fullSrc;
-      // Ensure the target is recorded as the high-res one (helps with mobile zoom state and guards)
-      modalImage.dataset.fullSrcTarget = fullSrc;
     }
+
+    if (typeof modalImage.decode === "function") {
+      try {
+        await modalImage.decode();
+      } catch (error) {
+        // decode() can reject for broken images; keep the loaded frame as-is.
+      }
+    }
+
+    updateModalCloseChrome();
   };
 
   const primeTriggerFullImage = (trigger, fetchPriority = "low") => {
@@ -1097,8 +1134,7 @@ function setupPreviewZoom() {
 
     document.body.style.paddingRight = `${Math.max(scrollbarWidth, 0)}px`;
     modal.classList.remove("image-modal--image", "image-modal--video");
-    resetModalImageZoom();
-    resetModalClosePosition();
+    resetModalCloseChrome();
 
     if (isVideo) {
       modalVideo.src = fullSrc;
@@ -1107,11 +1143,10 @@ function setupPreviewZoom() {
       void modalVideo.play().catch(() => {});
     } else {
       const previewSrc = getTriggerPreviewSrc(trigger);
+
+      modal.classList.add("image-modal--image");
       modalImage.dataset.fullSrcTarget = fullSrc;
       modalImage.src = previewSrc || fullSrc;
-      modal.classList.add("image-modal--image");
-      // Always upgrade to the high-res version from data-full-src (the @4x or mobile@4x).
-      // The relaxed guard in swapModalImageToFullRes ensures this reliably happens even on mobile.
       void swapModalImageToFullRes(fullSrc);
     }
 
@@ -1119,116 +1154,14 @@ function setupPreviewZoom() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("image-modal-open");
     document.documentElement.classList.add("image-modal-open");
-    requestAnimationFrame(updateModalClosePosition);
+    requestAnimationFrame(updateModalCloseChrome);
   };
 
   const closeModal = () => {
+    swipeDismissState.active = false;
     closeImageModalElement(modal, { blurActive: true });
-    resetModalImageZoom();
-    resetModalClosePosition();
+    resetModalCloseChrome();
   };
-
-  modalImage.addEventListener(
-    "touchstart",
-    (event) => {
-      if (!isMobileImageZoomEnabled()) return;
-
-      if (event.touches.length === 2) {
-        const [firstTouch, secondTouch] = event.touches;
-        const midpoint = getTouchMidpoint(firstTouch, secondTouch);
-
-        zoomState.pinchStartDistance = getTouchDistance(firstTouch, secondTouch);
-        zoomState.pinchStartScale = zoomState.scale;
-        zoomState.pinchStartTranslateX = zoomState.translateX;
-        zoomState.pinchStartTranslateY = zoomState.translateY;
-        zoomState.pinchStartMidpointX = midpoint.x;
-        zoomState.pinchStartMidpointY = midpoint.y;
-        event.preventDefault();
-        return;
-      }
-
-      if (event.touches.length === 1) {
-        // Relaxed: allow pan in mobile zoom mode even at initial scale < 1
-        // (large raster box + low initial scale for sharp @4x on pinch zoom)
-        const [touch] = event.touches;
-
-        zoomState.panStartX = touch.clientX;
-        zoomState.panStartY = touch.clientY;
-        zoomState.panStartTranslateX = zoomState.translateX;
-        zoomState.panStartTranslateY = zoomState.translateY;
-        event.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  modalImage.addEventListener(
-    "touchmove",
-    (event) => {
-      if (!isMobileImageZoomEnabled()) return;
-
-      if (event.touches.length === 2) {
-        const [firstTouch, secondTouch] = event.touches;
-        const midpoint = getTouchMidpoint(firstTouch, secondTouch);
-        const nextDistance = getTouchDistance(firstTouch, secondTouch);
-        const distanceRatio = zoomState.pinchStartDistance
-          ? nextDistance / zoomState.pinchStartDistance
-          : 1;
-
-        zoomState.scale = clamp(
-          zoomState.pinchStartScale * distanceRatio,
-          0.1,
-          MAX_MODAL_IMAGE_SCALE
-        );
-        zoomState.translateX =
-          zoomState.pinchStartTranslateX +
-          (midpoint.x - zoomState.pinchStartMidpointX);
-        zoomState.translateY =
-          zoomState.pinchStartTranslateY +
-          (midpoint.y - zoomState.pinchStartMidpointY);
-        applyModalImageZoom();
-        event.preventDefault();
-        return;
-      }
-
-      if (event.touches.length === 1) {
-        // Relaxed for initial scale < 1 with large high-res raster box
-        const [touch] = event.touches;
-
-        zoomState.translateX =
-          zoomState.panStartTranslateX + (touch.clientX - zoomState.panStartX);
-        zoomState.translateY =
-          zoomState.panStartTranslateY + (touch.clientY - zoomState.panStartY);
-        applyModalImageZoom();
-        event.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  modalImage.addEventListener(
-    "touchend",
-    (event) => {
-      if (!modal.classList.contains("image-modal--image")) return;
-
-      if (event.touches.length === 1) {
-        // Relaxed for initial scale < 1 with large high-res raster box
-        const [touch] = event.touches;
-
-        zoomState.panStartX = touch.clientX;
-        zoomState.panStartY = touch.clientY;
-        zoomState.panStartTranslateX = zoomState.translateX;
-        zoomState.panStartTranslateY = zoomState.translateY;
-        return;
-      }
-
-      if (event.touches.length === 0 && zoomState.scale <= 0.2) {
-        // Only auto-reset when zoomed way out (our "normal" on mobile can be <1)
-        resetModalImageZoom();
-      }
-    },
-    { passive: true }
-  );
 
   const scheduleModalImagePreloads = () => {
     if (prefersReducedData()) return;
@@ -1293,69 +1226,17 @@ function setupPreviewZoom() {
 
   previewZoomModalReady = true;
 
-  modalImage.addEventListener("load", () => {
-    applyModalImageZoom();
-    updateModalClosePosition();
-
-    // On mobile zoom mode, after high-res loads, size the <img> element
-    // based on its natural dimensions (from the @4x source) to give the
-    // browser enough pixel data for sharp pinch-to-zoom. We use a large
-    // CSS box + initial scale < 1 so the visual "1x" still fits the modal.
-    if (isMobileImageZoomEnabled() && modalImage.naturalWidth && modalImage.naturalHeight) {
-      const natW = modalImage.naturalWidth;
-      const natH = modalImage.naturalHeight;
-
-      // Large box (half natural is a good sweet spot for 4x sources)
-      // This makes the rasterization target much higher resolution than the viewport.
-      const boxW = natW / 2;
-      const boxH = natH / 2;
-
-      modalImage.style.width = `${boxW}px`;
-      modalImage.style.height = `${boxH}px`;
-      modalImage.style.maxWidth = 'none';
-      modalImage.style.maxHeight = 'none';
-
-      // Compute what scale makes this large box visually fit the current modal area
-      const modalStyles = window.getComputedStyle(modal);
-      const availW =
-        modal.clientWidth -
-        Number.parseFloat(modalStyles.paddingLeft || 0) -
-        Number.parseFloat(modalStyles.paddingRight || 0);
-      const availH =
-        modal.clientHeight -
-        Number.parseFloat(modalStyles.paddingTop || 0) -
-        Number.parseFloat(modalStyles.paddingBottom || 0);
-
-      const fitScale = Math.min(availW / boxW, availH / boxH);
-      zoomState.scale = Math.max(0.05, Math.min(fitScale || 1, 1));
-
-      // Re-apply transform + clamp with the new box size and initial scale
-      applyModalImageZoom();
-    }
-  });
-  modalVideo.addEventListener("loadedmetadata", updateModalClosePosition);
+  modalImage.addEventListener("load", updateModalCloseChrome);
+  modalVideo.addEventListener("loadedmetadata", updateModalCloseChrome);
   window.addEventListener(
     "resize",
     () => {
-      if (modal.classList.contains("image-modal--image")) {
-        if (isMobileImageZoomEnabled()) {
-          applyModalImageZoom();
-        } else {
-          resetModalImageZoom();
-        }
-      }
+      updateModalCloseChrome();
 
-      updateModalClosePosition();
-
-      // If the special result image-block is currently open in the modal,
-      // and the viewport crossed the mobile breakpoint, live-swap the asset in the modal too.
       const resultBlock = document.querySelector(".image-block.result");
       if (resultBlock && modal.classList.contains("image-modal--image")) {
         const currentFullTarget = modalImage.dataset.fullSrcTarget;
         const latestFull = resultBlock.getAttribute("data-full-src");
-        const latestPreview = resultBlock
-          .querySelector(".image-block__image")
-          ?.getAttribute("src");
 
         if (
           currentFullTarget &&
@@ -1364,21 +1245,21 @@ function setupPreviewZoom() {
           /(?:d|s)-result/.test(currentFullTarget)
         ) {
           modalImage.dataset.fullSrcTarget = latestFull;
-          if (latestPreview) {
-            modalImage.src = latestPreview;
-          }
           void swapModalImageToFullRes(latestFull);
         }
       }
     }
   );
 
-  modalOverlay.addEventListener("click", closeModal);
-  modalClose.addEventListener("click", closeModal);
+  const handleCloseButtonActivate = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeModal();
+  };
 
-  // Clicking anywhere outside the actual media (gutters around tall/wide images, etc.)
-  // should also close the modal. This makes the X reliable even if its positioned
-  // hit box is temporarily affected by tall content or stacking.
+  modalOverlay.addEventListener("click", closeModal);
+  modalClose.addEventListener("click", handleCloseButtonActivate);
+
   modal.addEventListener("click", (event) => {
     if (!modal.classList.contains("is-active")) return;
     const target = event.target;
@@ -1387,20 +1268,69 @@ function setupPreviewZoom() {
     closeModal();
   });
 
+  modal.addEventListener(
+    "touchstart",
+    (event) => {
+      if (!modal.classList.contains("is-active")) return;
+      if (window.innerWidth >= MOBILE_PADDING_BREAKPOINT) return;
+      if (event.touches.length !== 1) return;
+      if (event.target.closest(".image-modal__close")) return;
+
+      swipeDismissState.active = true;
+      swipeDismissState.startX = event.touches[0].clientX;
+      swipeDismissState.startY = event.touches[0].clientY;
+    },
+    { passive: true }
+  );
+
+  modal.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!swipeDismissState.active || event.touches.length !== 1) return;
+      if (event.target.closest(".image-modal__close")) return;
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - swipeDismissState.startX;
+      const deltaY = swipeDismissState.startY - touch.clientY;
+
+      if (
+        deltaY >= MODAL_SWIPE_DISMISS_MIN_DISTANCE &&
+        Math.abs(deltaX) <= deltaY * 0.75
+      ) {
+        swipeDismissState.active = false;
+        closeModal();
+      }
+    },
+    { passive: true }
+  );
+
+  const resetSwipeDismiss = () => {
+    swipeDismissState.active = false;
+  };
+
+  modal.addEventListener("touchend", resetSwipeDismiss, { passive: true });
+  modal.addEventListener("touchcancel", resetSwipeDismiss, { passive: true });
+
   modalOverlay.addEventListener("wheel", (event) => event.preventDefault(), {
     passive: false,
   });
-  modalOverlay.addEventListener(
-    "touchmove",
-    (event) => event.preventDefault(),
-    { passive: false }
-  );
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal.classList.contains("is-active")) {
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateModalCloseChrome);
+    window.visualViewport.addEventListener("scroll", updateModalCloseChrome);
+  }
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Escape" || event.repeat) return;
+      if (!modal.classList.contains("is-active")) return;
+
+      event.preventDefault();
       closeModal();
-    }
-  });
+    },
+    true
+  );
 }
 
 function setupSaveFileButton() {

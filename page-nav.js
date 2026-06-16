@@ -1,7 +1,6 @@
 (() => {
   const PORTFOLIO_PAGES = [
     "index.html",
-    "pet-project.html",
     "agreement-card.html",
     "story-builder.html",
   ];
