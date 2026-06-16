@@ -1,7 +1,0 @@
----
-pid: 0
-cwd: "c:\Users\lubu\Desktop\Portfolio\v.1.2"
-command: "cd \"c:\\Users\\lubu\\Desktop\\Portfolio\\v.1.2\" && npx --yes serve -l 3456 ."
-started_at: 2026-06-15T08:16:11.313Z
-running_for_ms: 0        
----
