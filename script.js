@@ -225,33 +225,22 @@ function setupCopyEmailButton() {
   });
 }
 
+const NON_BREAKING_TEXT_EXCLUDED_SELECTOR =
+  "script, style, noscript, svg, .link-button-text";
+
 function setupNonBreakingShortWords() {
-  if (!document.body.classList.contains("case-study")) return;
-
-  const textSelectors = [
-    ".story-content__description",
-    ".story-section__title",
-    ".story-section__description",
-    ".job-stories-list__text",
-    ".job-stories-list__caption",
-    ".image-block__caption",
-  ];
-
   const walkerFilter = {
     acceptNode(node) {
-      if (!node.textContent || !node.textContent.trim()) {
+      if (!node.textContent?.trim()) {
         return NodeFilter.FILTER_REJECT;
       }
 
-      if (!(node.parentElement instanceof HTMLElement)) {
+      const parent = node.parentElement;
+      if (!(parent instanceof HTMLElement)) {
         return NodeFilter.FILTER_REJECT;
       }
 
-      if (
-        node.parentElement.closest(
-          "script, style, noscript, .back-button, .link-button-text"
-        )
-      ) {
+      if (parent.closest(NON_BREAKING_TEXT_EXCLUDED_SELECTOR)) {
         return NodeFilter.FILTER_REJECT;
       }
 
@@ -259,23 +248,21 @@ function setupNonBreakingShortWords() {
     },
   };
 
-  document.querySelectorAll(textSelectors.join(", ")).forEach((element) => {
-    const textWalker = document.createTreeWalker(
-      element,
-      NodeFilter.SHOW_TEXT,
-      walkerFilter
+  const textWalker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    walkerFilter
+  );
+
+  let currentNode = textWalker.nextNode();
+
+  while (currentNode) {
+    currentNode.textContent = currentNode.textContent.replace(
+      nonBreakingWordPattern,
+      (_, prefix, word) => `${prefix}${word}${NON_BREAKING_SPACE}`
     );
-
-    let currentNode = textWalker.nextNode();
-
-    while (currentNode) {
-      currentNode.textContent = currentNode.textContent.replace(
-        nonBreakingWordPattern,
-        (_, prefix, word) => `${prefix}${word}${NON_BREAKING_SPACE}`
-      );
-      currentNode = textWalker.nextNode();
-    }
-  });
+    currentNode = textWalker.nextNode();
+  }
 }
 
 function setupWorkListToggles() {
@@ -1530,6 +1517,199 @@ const closeActiveImageModal = () => {
   closeImageModalElement(document.querySelector(".image-modal.is-active"));
 };
 
+const PORTFOLIO_PAGES = [
+  "index.html",
+  "agreement-card.html",
+  "story-builder.html",
+];
+
+const pageCache = new Map();
+let isPageNavigationRendering = false;
+let isPageNavigationReady = false;
+
+const getPageUrl = (pageName) =>
+  pageName === "index.html" ? "./index.html" : `./${pageName}`;
+
+const normalizePageName = (value) => {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value, window.location.href);
+
+    if (url.origin !== window.location.origin) {
+      return null;
+    }
+
+    let pageName = url.pathname.split("/").filter(Boolean).pop() || "index.html";
+
+    if (pageName === "" || url.pathname.endsWith("/")) {
+      pageName = "index.html";
+    }
+
+    return PORTFOLIO_PAGES.includes(pageName) ? pageName : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getCurrentPageName = () =>
+  normalizePageName(window.location.pathname) || "index.html";
+
+const warmImageCacheForHtml = (html) => {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+
+  parsed.querySelectorAll("img[src]").forEach((image) => {
+    const src = image.getAttribute("src");
+    if (!src) return;
+
+    const preloader = new Image();
+    preloader.decoding = "async";
+    preloader.src = new URL(src, window.location.href).href;
+  });
+
+  parsed.querySelectorAll("[style]").forEach((element) => {
+    const style = element.getAttribute("style") || "";
+    const match = style.match(/background-image:\s*url\((['"]?)([^'")]+)\1\)/i);
+    if (!match?.[2]) return;
+
+    const preloader = new Image();
+    preloader.decoding = "async";
+    preloader.src = new URL(match[2], window.location.href).href;
+  });
+};
+
+const fetchPageHtml = async (pageName) => {
+  const response = await fetch(`./${pageName}`, { cache: "force-cache" });
+  if (!response.ok) {
+    throw new Error(`Failed to preload ${pageName}`);
+  }
+
+  return response.text();
+};
+
+const ensurePageCached = async (pageName) => {
+  if (pageCache.has(pageName)) {
+    return pageCache.get(pageName);
+  }
+
+  const html = await fetchPageHtml(pageName);
+  pageCache.set(pageName, html);
+  warmImageCacheForHtml(html);
+  return html;
+};
+
+const cacheCurrentDocument = () => {
+  const currentPage = getCurrentPageName();
+  pageCache.set(currentPage, document.documentElement.outerHTML);
+  warmImageCacheForHtml(document.documentElement.outerHTML);
+};
+
+const preloadRemainingPages = () => {
+  const currentPage = getCurrentPageName();
+
+  PORTFOLIO_PAGES.forEach((pageName) => {
+    if (pageName === currentPage || pageCache.has(pageName)) return;
+    void ensurePageCached(pageName).catch((error) => console.error(error));
+  });
+};
+
+const schedulePagePreload = () => {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => preloadRemainingPages(), { timeout: 1500 });
+    return;
+  }
+
+  window.setTimeout(preloadRemainingPages, 200);
+};
+
+const renderCachedPage = async (
+  pageName,
+  { skipAnimation = false, updateHistory = false } = {}
+) => {
+  if (isPageNavigationRendering) return;
+  isPageNavigationRendering = true;
+
+  try {
+    const html = await ensurePageCached(pageName);
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    const preservedModal = document.querySelector(".image-modal");
+
+    document.title = parsed.title;
+    document.body.className = parsed.body.className;
+    document.body.innerHTML = parsed.body.innerHTML;
+
+    if (preservedModal) {
+      document.body.append(preservedModal);
+    }
+
+    window.scrollTo(0, 0);
+
+    if (skipAnimation) {
+      document.body.classList.add("no-anim");
+      requestAnimationFrame(() => {
+        document.body.classList.remove("no-anim");
+      });
+    }
+
+    if (updateHistory === "push") {
+      window.history.pushState({ page: pageName }, "", getPageUrl(pageName));
+    } else if (updateHistory === "replace") {
+      window.history.replaceState({ page: pageName }, "", getPageUrl(pageName));
+    }
+
+    initPortfolioPage();
+  } finally {
+    isPageNavigationRendering = false;
+  }
+};
+
+function setupPageNavigation() {
+  if (isPageNavigationReady) return;
+  isPageNavigationReady = true;
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const link = event.target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if (link.target && link.target !== "_self") return;
+
+      const pageName = normalizePageName(link.getAttribute("href"));
+      if (!pageName || pageName === getCurrentPageName()) return;
+
+      event.preventDefault();
+      cacheCurrentDocument();
+      void renderCachedPage(pageName, { skipAnimation: true, updateHistory: "push" });
+    },
+    true
+  );
+
+  window.addEventListener("popstate", () => {
+    cacheCurrentDocument();
+    const pageName = getCurrentPageName();
+    void renderCachedPage(pageName, { skipAnimation: true, updateHistory: false });
+  });
+
+  cacheCurrentDocument();
+  window.history.replaceState(
+    { page: getCurrentPageName() },
+    "",
+    window.location.href
+  );
+  schedulePagePreload();
+}
+
 function initPortfolioPage() {
   resetPageLifecycle();
   closeActiveImageModal();
@@ -1547,4 +1727,15 @@ function initPortfolioPage() {
 
 window.initPortfolioPage = initPortfolioPage;
 
-document.addEventListener("DOMContentLoaded", initPortfolioPage);
+const bootstrapPortfolioApp = () => {
+  setupPageNavigation();
+  initPortfolioPage();
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootstrapPortfolioApp, {
+    once: true,
+  });
+} else {
+  bootstrapPortfolioApp();
+}
